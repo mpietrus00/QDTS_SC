@@ -357,24 +357,22 @@ Pdef(\asaSegregated,
         // Low stream
         Pbind(
             \instrument, \qdtsStream,
-            \carrierPitch, 800,
             \targetPitch, 80,
             \dur, 0.25,
             \amp, 0.12,
             \pan, -0.5,
             \degree, Pseq([0, 2, 4, 5], inf),
-            \dummy, Pfunc {|ev| ev[\carrierPitch] = 800 + (ev[\degree] * 20); ev }
+            \carrierPitch, Pkey(\degree) * 20 + 800
         ),
         // High stream
         Pbind(
             \instrument, \qdtsStream,
-            \carrierPitch, 2400,
             \targetPitch, 120,
             \dur, 0.25,
             \amp, 0.10,
             \pan, 0.5,
             \degree, Pseq([7, 5, 4, 2], inf),
-            \dummy, Pfunc {|ev| ev[\carrierPitch] = 2400 + (ev[\degree] * 30); ev }
+            \carrierPitch, Pkey(\degree) * 30 + 2400
         )
     ])
 ).play;
@@ -389,23 +387,21 @@ Pdef(\asaFused,
     Ppar([
         Pbind(
             \instrument, \qdtsStream,
-            \carrierPitch, 1000,
             \targetPitch, 100,
             \dur, 0.25,
             \amp, 0.10,
             \pan, -0.3,
             \degree, Pseq([0, 2, 4, 5], inf),
-            \dummy, Pfunc {|ev| ev[\carrierPitch] = 1000 + (ev[\degree] * 15); ev }
+            \carrierPitch, Pkey(\degree) * 15 + 1000
         ),
         Pbind(
             \instrument, \qdtsStream,
-            \carrierPitch, 1200,  // Close to first stream
             \targetPitch, 100,
             \dur, 0.25,
             \amp, 0.10,
             \pan, 0.3,
             \degree, Pseq([0, 2, 4, 5], inf),
-            \dummy, Pfunc {|ev| ev[\carrierPitch] = 1200 + (ev[\degree] * 15); ev }
+            \carrierPitch, Pkey(\degree) * 15 + 1200  // Close to first stream
         )
     ])
 ).play;
