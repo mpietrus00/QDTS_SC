@@ -361,8 +361,8 @@ Pdef(\asaSegregated,
             \dur, 0.25,
             \amp, 0.12,
             \pan, -0.5,
-            \degree, Pseq([0, 2, 4, 5], inf),
-            \carrierPitch, Pkey(\degree) * 20 + 800
+            \idx, Pseq([0, 2, 4, 5], inf),
+            \carrierPitch, Pkey(\idx) * 20 + 800
         ),
         // High stream
         Pbind(
@@ -371,8 +371,8 @@ Pdef(\asaSegregated,
             \dur, 0.25,
             \amp, 0.10,
             \pan, 0.5,
-            \degree, Pseq([7, 5, 4, 2], inf),
-            \carrierPitch, Pkey(\degree) * 30 + 2400
+            \idx, Pseq([7, 5, 4, 2], inf),
+            \carrierPitch, Pkey(\idx) * 30 + 2400
         )
     ])
 ).play;
@@ -391,8 +391,8 @@ Pdef(\asaFused,
             \dur, 0.25,
             \amp, 0.10,
             \pan, -0.3,
-            \degree, Pseq([0, 2, 4, 5], inf),
-            \carrierPitch, Pkey(\degree) * 15 + 1000
+            \idx, Pseq([0, 2, 4, 5], inf),
+            \carrierPitch, Pkey(\idx) * 15 + 1000
         ),
         Pbind(
             \instrument, \qdtsStream,
@@ -400,8 +400,8 @@ Pdef(\asaFused,
             \dur, 0.25,
             \amp, 0.10,
             \pan, 0.3,
-            \degree, Pseq([0, 2, 4, 5], inf),
-            \carrierPitch, Pkey(\degree) * 15 + 1200  // Close to first stream
+            \idx, Pseq([0, 2, 4, 5], inf),
+            \carrierPitch, Pkey(\idx) * 15 + 1200  // Close to first stream
         )
     ])
 ).play;
