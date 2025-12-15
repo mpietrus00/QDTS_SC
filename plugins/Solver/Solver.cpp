@@ -17,6 +17,9 @@
 
 using namespace Eigen;
 
+// Type alias for random number generator
+using RNG = std::mt19937;
+
 // InterfaceTable contains pointers to functions in SuperCollider's API
 static InterfaceTable *ft;
 
@@ -35,7 +38,7 @@ struct Solver : public Unit {
     float estimationError;   // L^2 error of the estimation
     bool needsUpdate;        // Flag to trigger recalculation
 
-    std::mt19937 rng;        // Random number generator
+    RNG rng;                 // Random number generator
 };
 
 // Function prototypes
@@ -275,7 +278,7 @@ static void Solver_Dtor(Solver* unit) {
     unit->init_T.~VectorXd();
     unit->solution.~VectorXd();
     unit->temporal_solution.~VectorXd();
-    unit->rng.~mt19937();
+    unit->rng.~RNG();
 }
 
 // Control-rate calculation function
