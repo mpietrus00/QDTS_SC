@@ -27,7 +27,7 @@ static InterfaceTable *ft;
 static const int MAX_HARMONICS = 16;
 
 // Declare the UGen class
-struct Solver : public Unit {
+struct QDTSSolver : public Unit {
     VectorXd X;              // Current solution vector
     VectorXd T;              // Target vector (original)
     VectorXd init_T;         // Initial target (for error calculation)
@@ -137,7 +137,7 @@ static VectorXd randomVector(int n, std::mt19937& rng) {
 }
 
 // Main solver function using Newton's method with restarts
-static void solveSystem(Solver* unit) {
+static void solveSystem(QDTSSolver* unit) {
     int n = unit->numHarmonics;
     const double TOLERANCE = 0.0001;
     const int MAX_NEWTON_ITER = 33;
@@ -232,12 +232,12 @@ static void solveSystem(Solver* unit) {
 }
 
 // UGen function declarations
-static void Solver_Ctor(Solver* unit);
-static void Solver_Dtor(Solver* unit);
-static void Solver_next_k(Solver* unit, int inNumSamples);
+static void QDTSSolver_Ctor(QDTSSolver* unit);
+static void QDTSSolver_Dtor(QDTSSolver* unit);
+static void QDTSSolver_next_k(QDTSSolver* unit, int inNumSamples);
 
 // Plugin constructor
-static void Solver_Ctor(Solver* unit) {
+static void QDTSSolver_Ctor(QDTSSolver* unit) {
     // Get number of harmonics from first input (capped at MAX_HARMONICS)
     unit->numHarmonics = static_cast<int>(IN0(0));
     unit->numHarmonics = std::max(1, std::min(unit->numHarmonics, MAX_HARMONICS));
@@ -264,14 +264,14 @@ static void Solver_Ctor(Solver* unit) {
     unit->needsUpdate = true;
 
     // Set calculation function
-    SETCALC(Solver_next_k);
+    SETCALC(QDTSSolver_next_k);
 
     // Calculate first output
-    Solver_next_k(unit, 1);
+    QDTSSolver_next_k(unit, 1);
 }
 
 // Plugin destructor
-static void Solver_Dtor(Solver* unit) {
+static void QDTSSolver_Dtor(QDTSSolver* unit) {
     // Explicitly call destructors for Eigen objects and RNG
     unit->X.~VectorXd();
     unit->T.~VectorXd();
@@ -282,7 +282,7 @@ static void Solver_Dtor(Solver* unit) {
 }
 
 // Control-rate calculation function
-static void Solver_next_k(Solver* unit, int inNumSamples) {
+static void QDTSSolver_next_k(QDTSSolver* unit, int inNumSamples) {
     int n = unit->numHarmonics;
 
     // Check if target values have changed
@@ -318,7 +318,7 @@ static void Solver_next_k(Solver* unit, int inNumSamples) {
 }
 
 // Entry point
-PluginLoad(Solver) {
+PluginLoad(QDTSSolver) {
     ft = inTable;
-    DefineDtorUnit(Solver);
+    DefineDtorUnit(QDTSSolver);
 }
