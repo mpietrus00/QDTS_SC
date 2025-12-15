@@ -42,7 +42,7 @@ endif()
 
 # Build the QDTSSolver plugin
 add_library(QDTSSolver MODULE
-    plugins/Solver/Solver.cpp
+    plugins/QDTSSolver/QDTSSolver.cpp
 )
 
 target_link_libraries(QDTSSolver PRIVATE Eigen3::Eigen)
