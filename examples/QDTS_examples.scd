@@ -312,5 +312,391 @@ IMPORTANT NOTES:
    Maximum supported: 16 harmonics
 */
 
+// ============================================================================
+// 9. BREGMAN AUDITORY SCENE ANALYSIS EXAMPLES
+// ============================================================================
+
+/*
+Bregman's Auditory Scene Analysis (ASA) describes how we perceptually organize
+sound into coherent streams. QDTS is particularly interesting for ASA because
+the phantom ADPs can either fuse with carriers or segregate into distinct streams.
+
+Key ASA principles demonstrated below:
+- Stream segregation vs. fusion (frequency proximity)
+- Sequential streaming (tempo-dependent grouping)
+- Common fate (synchronized changes bind sounds)
+- Harmonic capture (ADPs fusing with carrier complex)
+
+Reference: Bregman, A.S. (1990). Auditory Scene Analysis. MIT Press.
+*/
+
+// ----------------------------------------
+// 9a. STREAM SEGREGATION: Two QDTS sources
+// ----------------------------------------
+// When carrier frequencies are far apart, we hear two separate streams.
+// When close together, they fuse into one complex sound.
+
+(
+SynthDef(\qdtsStream, {|out = 0, carrierPitch = 1000, targetPitch = 100,
+    amp = 0.15, pan = 0, gate = 1, atk = 0.005, rel = 0.1|
+
+    var env = EnvGen.kr(Env.perc(atk, rel), gate, doneAction: 2);
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Pan2.ar(Limiter.ar(sines.sum * env * amp, 0.9), pan));
+}).add;
+)
+
+// SEGREGATED: Two distinct streams (carriers far apart: 800 Hz vs 2400 Hz)
+// You should hear HIGH and LOW as separate melodic lines
+(
+Pdef(\asaSegregated,
+    Ppar([
+        // Low stream
+        Pbind(
+            \instrument, \qdtsStream,
+            \carrierPitch, 800,
+            \targetPitch, 80,
+            \dur, 0.25,
+            \amp, 0.12,
+            \pan, -0.5,
+            \degree, Pseq([0, 2, 4, 5], inf),
+            \dummy, Pfunc {|ev| ev[\carrierPitch] = 800 + (ev[\degree] * 20); ev }
+        ),
+        // High stream
+        Pbind(
+            \instrument, \qdtsStream,
+            \carrierPitch, 2400,
+            \targetPitch, 120,
+            \dur, 0.25,
+            \amp, 0.10,
+            \pan, 0.5,
+            \degree, Pseq([7, 5, 4, 2], inf),
+            \dummy, Pfunc {|ev| ev[\carrierPitch] = 2400 + (ev[\degree] * 30); ev }
+        )
+    ])
+).play;
+)
+
+Pdef(\asaSegregated).stop;
+
+// FUSED: Single complex stream (carriers close: 1000 Hz vs 1200 Hz)
+// The two sources blend into one rich, complex timbre
+(
+Pdef(\asaFused,
+    Ppar([
+        Pbind(
+            \instrument, \qdtsStream,
+            \carrierPitch, 1000,
+            \targetPitch, 100,
+            \dur, 0.25,
+            \amp, 0.10,
+            \pan, -0.3,
+            \degree, Pseq([0, 2, 4, 5], inf),
+            \dummy, Pfunc {|ev| ev[\carrierPitch] = 1000 + (ev[\degree] * 15); ev }
+        ),
+        Pbind(
+            \instrument, \qdtsStream,
+            \carrierPitch, 1200,  // Close to first stream
+            \targetPitch, 100,
+            \dur, 0.25,
+            \amp, 0.10,
+            \pan, 0.3,
+            \degree, Pseq([0, 2, 4, 5], inf),
+            \dummy, Pfunc {|ev| ev[\carrierPitch] = 1200 + (ev[\degree] * 15); ev }
+        )
+    ])
+).play;
+)
+
+Pdef(\asaFused).stop;
+
+// ----------------------------------------
+// 9b. GALLOPING RHYTHM: Tempo-dependent streaming
+// ----------------------------------------
+// Classic ASA demo: ABA_ABA_ pattern
+// At slow tempos: hear integrated gallop (da-da-DUM)
+// At fast tempos: hear two separate streams (A-A-A... and B...B...)
+
+(
+SynthDef(\qdtsGallop, {|out = 0, carrierPitch = 1000, targetPitch = 100,
+    amp = 0.15, gate = 1, atk = 0.005, rel = 0.08|
+
+    var env = EnvGen.kr(Env.perc(atk, rel), gate, doneAction: 2);
+    var amps = QDTSSolver.kr(4, 1, 0.6, 0.35, 0.2);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp, 0.9) ! 2);
+}).add;
+)
+
+// Slow gallop - should hear integrated ABA pattern
+(
+Pdef(\gallopSlow,
+    Pbind(
+        \instrument, \qdtsGallop,
+        \dur, 0.3,  // Slow tempo promotes integration
+        \carrierPitch, Pseq([1000, 1600, 1000, \rest], inf),  // A B A _
+        \targetPitch, 100,
+        \amp, 0.12,
+        \rel, 0.15
+    )
+).play;
+)
+
+Pdef(\gallopSlow).stop;
+
+// Fast gallop - streams segregate into A-A-A and B-B-B
+(
+Pdef(\gallopFast,
+    Pbind(
+        \instrument, \qdtsGallop,
+        \dur, 0.1,  // Fast tempo promotes segregation
+        \carrierPitch, Pseq([1000, 1600, 1000, \rest], inf),  // A B A _
+        \targetPitch, 100,
+        \amp, 0.12,
+        \rel, 0.06
+    )
+).play;
+)
+
+Pdef(\gallopFast).stop;
+
+// Interactive: Gradually speed up to hear transition from fusion to segregation
+(
+Pdef(\gallopAccel,
+    Pbind(
+        \instrument, \qdtsGallop,
+        \dur, Pseg([0.35, 0.08], [15], \exp),  // Accelerate over 15 seconds
+        \carrierPitch, Pseq([1000, 1600, 1000, \rest], inf),
+        \targetPitch, 100,
+        \amp, 0.12,
+        \rel, Pkey(\dur) * 0.6
+    )
+).play;
+)
+
+Pdef(\gallopAccel).stop;
+
+// ----------------------------------------
+// 9c. COMMON FATE: Synchronized spectral change
+// ----------------------------------------
+// Sounds that change together (common fate) are grouped as one source.
+// Here, two QDTS voices with synchronized spectral modulation fuse,
+// while asynchronous modulation causes segregation.
+
+(
+SynthDef(\qdtsCommonFate, {|out = 0, carrierPitch = 1000, targetPitch = 100,
+    amp = 0.15, pan = 0, t1mod = 0.5, t2mod = 0.3|
+
+    // Spectrum controlled by arguments (can be synchronized or not)
+    var t0 = 1;
+    var t1 = t1mod.max(0.01);
+    var t2 = t2mod.max(0.01);
+    var t3 = 0.2;
+
+    var amps = QDTSSolver.kr(4, t0, t1, t2, t3);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Pan2.ar(Limiter.ar(sines.sum * amp, 0.9), pan));
+}).add;
+)
+
+// COMMON FATE: Both voices modulate spectrum in sync → perceived as ONE source
+(
+~sharedLFO = { LFTri.kr(0.3).range(0.1, 0.8) };
+~commonFate1 = Synth(\qdtsCommonFate, [\carrierPitch, 1000, \targetPitch, 100, \pan, -0.4]);
+~commonFate2 = Synth(\qdtsCommonFate, [\carrierPitch, 1400, \targetPitch, 100, \pan, 0.4]);
+
+// Update both with same modulation
+fork {
+    loop {
+        var mod = ~sharedLFO.value;
+        ~commonFate1.set(\t1mod, mod, \t2mod, mod * 0.6);
+        ~commonFate2.set(\t1mod, mod, \t2mod, mod * 0.6);
+        0.05.wait;
+    }
+}
+)
+
+// Stop common fate demo
+(~commonFate1.free; ~commonFate2.free;)
+
+// INDEPENDENT FATE: Different modulation → perceived as TWO sources
+(
+~indep1 = Synth(\qdtsCommonFate, [\carrierPitch, 1000, \targetPitch, 100, \pan, -0.4]);
+~indep2 = Synth(\qdtsCommonFate, [\carrierPitch, 1400, \targetPitch, 100, \pan, 0.4]);
+
+// Update with different modulation rates
+fork {
+    var phase1 = 0, phase2 = 0;
+    loop {
+        phase1 = phase1 + 0.02;
+        phase2 = phase2 + 0.035;  // Different rate
+        ~indep1.set(\t1mod, sin(phase1).linlin(-1, 1, 0.1, 0.8));
+        ~indep2.set(\t1mod, sin(phase2).linlin(-1, 1, 0.1, 0.8));
+        0.05.wait;
+    }
+}
+)
+
+// Stop independent fate demo
+(~indep1.free; ~indep2.free;)
+
+// ----------------------------------------
+// 9d. HARMONIC SIEVE: Capturing stray partials
+// ----------------------------------------
+// A harmonic complex can "capture" nearby frequencies, pulling them
+// into the percept. QDTS ADPs demonstrate this by creating phantom
+// tones that fuse with the carrier harmonics.
+
+(
+SynthDef(\qdtsCapture, {|out = 0, carrierPitch = 1000, targetPitch = 100,
+    amp = 0.15, detuneAmt = 0|
+
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    // Slight detuning breaks harmonic relationship
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) + (i * detuneAmt) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+// Pure harmonic - all partials fuse into single pitch percept
+x = Synth(\qdtsCapture, [\carrierPitch, 1000, \targetPitch, 100, \detuneAmt, 0]);
+
+// Slight detune - still fuses (captured by harmonic template)
+x.set(\detuneAmt, 3);
+
+// More detune - starts to separate (roughness, beating)
+x.set(\detuneAmt, 8);
+
+// Strong detune - clearly separate components
+x.set(\detuneAmt, 15);
+
+x.free;
+
+// ----------------------------------------
+// 9e. CONTINUITY ILLUSION with QDTS
+// ----------------------------------------
+// Alternating QDTS tone with noise bursts.
+// At right levels, the tone seems to continue "through" the noise.
+
+(
+SynthDef(\qdtsContinuity, {|out = 0, carrierPitch = 1200, targetPitch = 80,
+    amp = 0.15, noiseAmp = 0.3, gapDur = 0.15|
+
+    var toneEnv = LFPulse.kr(1 / (gapDur * 2), 0, 0.5);
+    var noiseEnv = 1 - toneEnv;
+
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var tone = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] }.sum;
+
+    var noise = PinkNoise.ar;
+
+    var sig = (tone * toneEnv * amp) + (noise * noiseEnv * noiseAmp);
+
+    Out.ar(out, Limiter.ar(sig, 0.9) ! 2);
+}).add;
+)
+
+// The QDTS tone appears to continue through the noise gaps
+y = Synth(\qdtsContinuity, [\noiseAmp, 0.25, \gapDur, 0.12]);
+
+// Adjust noise level - too quiet breaks the illusion
+y.set(\noiseAmp, 0.1);  // Illusion weakens
+y.set(\noiseAmp, 0.3);  // Illusion restored
+
+// Longer gaps make illusion harder to maintain
+y.set(\gapDur, 0.25);
+
+y.free;
+
+// ----------------------------------------
+// 9f. MELODIC STREAMING: Van Noorden boundaries
+// ----------------------------------------
+// Demonstrates the temporal coherence and fission boundaries
+// Two interleaved melodies that segregate based on pitch distance
+
+(
+SynthDef(\qdtsMelStream, {|out = 0, carrierPitch = 1000, targetPitch = 80,
+    amp = 0.12, atk = 0.005, rel = 0.1, gate = 1|
+
+    var env = EnvGen.kr(Env.perc(atk, rel), gate, doneAction: 2);
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp, 0.9) ! 2);
+}).add;
+)
+
+// Small pitch interval - hear as single integrated melody
+(
+Pdef(\streamNarrow,
+    Pbind(
+        \instrument, \qdtsMelStream,
+        \dur, 0.15,
+        // Alternating between two pitch levels (small interval)
+        \carrierPitch, Pseq([1000, 1100, 1000, 1100, 1000, 1100, 1200, 1100], inf),
+        \targetPitch, 80,
+        \amp, 0.1
+    )
+).play;
+)
+
+Pdef(\streamNarrow).stop;
+
+// Large pitch interval - segregates into two streams
+(
+Pdef(\streamWide,
+    Pbind(
+        \instrument, \qdtsMelStream,
+        \dur, 0.15,
+        // Alternating between two pitch levels (large interval)
+        \carrierPitch, Pseq([800, 1800, 800, 1800, 800, 1800, 900, 1800], inf),
+        \targetPitch, 80,
+        \amp, 0.1
+    )
+).play;
+)
+
+Pdef(\streamWide).stop;
+
+// Gradually increasing interval - hear transition from integration to segregation
+(
+Pdef(\streamExpand,
+    Pbind(
+        \instrument, \qdtsMelStream,
+        \dur, 0.15,
+        \carrierPitch, Pfunc({
+            var base = 1000;
+            var interval = ~streamInterval ? 100;
+            [base, base + interval].choose
+        }),
+        \targetPitch, 80,
+        \amp, 0.1
+    )
+).play;
+
+// Slowly increase interval
+fork {
+    ~streamInterval = 100;
+    100.do {|i|
+        ~streamInterval = 100 + (i * 10);
+        ("Interval: " ++ ~streamInterval ++ " Hz").postln;
+        1.wait;
+    }
+}
+)
+
+Pdef(\streamExpand).stop;
+
 // Cleanup
 Pdef.all.do(_.stop);
