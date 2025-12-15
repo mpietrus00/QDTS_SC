@@ -356,23 +356,23 @@ Pdef(\asaSegregated,
     Ppar([
         // Low stream
         Pbind(
+            \type, \on,  // Don't schedule release (synth self-frees)
             \instrument, \qdtsStream,
             \targetPitch, 80,
             \dur, 0.25,
             \amp, 0.12,
             \pan, -0.5,
-            \idx, Pseq([0, 2, 4, 5], inf),
-            \carrierPitch, Pkey(\idx) * 20 + 800
+            \carrierPitch, Pseq([800, 840, 880, 900], inf)
         ),
         // High stream
         Pbind(
+            \type, \on,
             \instrument, \qdtsStream,
             \targetPitch, 120,
             \dur, 0.25,
             \amp, 0.10,
             \pan, 0.5,
-            \idx, Pseq([7, 5, 4, 2], inf),
-            \carrierPitch, Pkey(\idx) * 30 + 2400
+            \carrierPitch, Pseq([2610, 2550, 2520, 2460], inf)
         )
     ])
 ).play;
@@ -386,22 +386,22 @@ Pdef(\asaSegregated).stop;
 Pdef(\asaFused,
     Ppar([
         Pbind(
+            \type, \on,
             \instrument, \qdtsStream,
             \targetPitch, 100,
             \dur, 0.25,
             \amp, 0.10,
             \pan, -0.3,
-            \idx, Pseq([0, 2, 4, 5], inf),
-            \carrierPitch, Pkey(\idx) * 15 + 1000
+            \carrierPitch, Pseq([1000, 1030, 1060, 1075], inf)
         ),
         Pbind(
+            \type, \on,
             \instrument, \qdtsStream,
             \targetPitch, 100,
             \dur, 0.25,
             \amp, 0.10,
             \pan, 0.3,
-            \idx, Pseq([0, 2, 4, 5], inf),
-            \carrierPitch, Pkey(\idx) * 15 + 1200  // Close to first stream
+            \carrierPitch, Pseq([1200, 1230, 1260, 1275], inf)  // Close to first stream
         )
     ])
 ).play;
@@ -433,6 +433,7 @@ SynthDef(\qdtsGallop, {|out = 0, carrierPitch = 1000, targetPitch = 100,
 (
 Pdef(\gallopSlow,
     Pbind(
+        \type, \on,
         \instrument, \qdtsGallop,
         \dur, 0.3,  // Slow tempo promotes integration
         \carrierPitch, Pseq([1000, 1600, 1000, \rest], inf),  // A B A _
@@ -449,6 +450,7 @@ Pdef(\gallopSlow).stop;
 (
 Pdef(\gallopFast,
     Pbind(
+        \type, \on,
         \instrument, \qdtsGallop,
         \dur, 0.1,  // Fast tempo promotes segregation
         \carrierPitch, Pseq([1000, 1600, 1000, \rest], inf),  // A B A _
@@ -465,6 +467,7 @@ Pdef(\gallopFast).stop;
 (
 Pdef(\gallopAccel,
     Pbind(
+        \type, \on,
         \instrument, \qdtsGallop,
         \dur, Pseg([0.35, 0.08], [15], \exp),  // Accelerate over 15 seconds
         \carrierPitch, Pseq([1000, 1600, 1000, \rest], inf),
@@ -638,6 +641,7 @@ SynthDef(\qdtsMelStream, {|out = 0, carrierPitch = 1000, targetPitch = 80,
 (
 Pdef(\streamNarrow,
     Pbind(
+        \type, \on,
         \instrument, \qdtsMelStream,
         \dur, 0.15,
         // Alternating between two pitch levels (small interval)
@@ -654,6 +658,7 @@ Pdef(\streamNarrow).stop;
 (
 Pdef(\streamWide,
     Pbind(
+        \type, \on,
         \instrument, \qdtsMelStream,
         \dur, 0.15,
         // Alternating between two pitch levels (large interval)
@@ -670,6 +675,7 @@ Pdef(\streamWide).stop;
 (
 Pdef(\streamExpand,
     Pbind(
+        \type, \on,
         \instrument, \qdtsMelStream,
         \dur, 0.15,
         \carrierPitch, Pfunc({
@@ -683,7 +689,7 @@ Pdef(\streamExpand,
 ).play;
 
 // Slowly increase interval
-fork {
+~streamExpandRoutine = fork {
     ~streamInterval = 100;
     100.do {|i|
         ~streamInterval = 100 + (i * 10);
