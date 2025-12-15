@@ -11,8 +11,8 @@ if(NOT SC_PATH)
     message(FATAL_ERROR "SC_PATH not set. Please provide path to SuperCollider source with -DSC_PATH=/path/to/supercollider")
 endif()
 
-# Find Eigen
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+# Find Eigen (any version 3.x+)
+find_package(Eigen3 REQUIRED NO_MODULE)
 if(NOT Eigen3_FOUND)
     # Try pkg-config as fallback
     find_package(PkgConfig)
