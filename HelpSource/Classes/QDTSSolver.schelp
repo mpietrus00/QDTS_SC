@@ -6,9 +6,11 @@ related:: Classes/QDTS, Guides/QDTS_Guide
 DESCRIPTION::
 QDTSSolver is a UGen that solves a system of nonlinear equations for synthesizing Auditory Distortion Products (ADPs). It uses Newton's method with random restarts to find amplitude coefficients that produce a desired harmonic spectrum through quadratic distortion.
 
-Based on the equation proposed in:
+Based on:
 
-Kendall, G.S., Haworth, C., and Cadiz, R.F. (2014). emphasis::"Sound Synthesis with Auditory Distortion Products.":: Computer Music Journal 38(4).
+Gutiérrez, E., Haworth, C., and Cádiz, R. (2024). emphasis::"Generating Sonic Phantoms with Quadratic Difference Tone Spectrum Synthesis.":: Computer Music Journal 47(3):1-16.
+
+Kendall, G.S., Haworth, C., and Cádiz, R.F. (2014). emphasis::"Sound Synthesis with Auditory Distortion Products.":: Computer Music Journal 38(4).
 
 The solver runs at control rate and outputs normalized amplitude values that can be used to scale sinusoidal oscillators.
 

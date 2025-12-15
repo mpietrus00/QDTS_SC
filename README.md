@@ -4,11 +4,13 @@ A SuperCollider UGen plugin for synthesizing sounds using Auditory Distortion Pr
 
 ## Overview
 
-QDTS_SC implements a solver for a system of equations related to the synthesis of Auditory Distortion Products, as proposed in:
+QDTS_SC implements a solver for a system of equations related to the synthesis of Auditory Distortion Products (ADPs). The method allows for controlled generation of quadratic difference tone spectra, enabling resynthesis of target timbres as auditory illusions.
 
-> Kendall, G.S., Haworth, C., and Cadiz, R.F. (2014). *Sound Synthesis with Auditory Distortion Products*. Computer Music Journal 38(4).
+Based on:
 
-This plugin is a port from the Max/MSP implementation by Gutierrez, E. and Cadiz, R.
+> Gutiérrez, E., Haworth, C., and Cádiz, R. (2024). *Generating Sonic Phantoms with Quadratic Difference Tone Spectrum Synthesis*. Computer Music Journal 47(3):1-16.
+
+> Kendall, G.S., Haworth, C., and Cádiz, R.F. (2014). *Sound Synthesis with Auditory Distortion Products*. Computer Music Journal 38(4).
 
 ## Features
 
@@ -136,9 +138,17 @@ var t1s = t1.max(0.01);
 ### Carrier and Target Pitch
 
 The synthesis uses frequency relationships:
-- **Carrier pitch**: Base frequency (f_c)
+- **Carrier pitch**: Base frequency (f_c), should be in **1kHz-5kHz range** (typically ~2.5kHz)
 - **Target pitch**: Difference frequency (f_d)
 - **Resulting frequencies**: f_c, f_c + f_d, f_c + 2*f_d, ...
+
+### Perceptual Notes
+
+- **Max 16 harmonics**: More than 16 QDT harmonics unlikely to be effective
+- **Continuous sounds**: Work better than transients for perceiving QDTs
+- **Amplitude modulation**: Apply square root of intended depth (due to quadratic nature)
+- **Loudspeakers preferred**: QDTs easier to hear over speakers than headphones
+- **Fatigue**: Keep durations under 2 minutes at high levels
 
 ```supercollider
 (
@@ -165,9 +175,10 @@ See `examples/QDTS_examples.scd` for comprehensive usage examples including:
 
 ## References
 
-- Kendall, G.S., Haworth, C., and Cadiz, R.F. (2014). Sound Synthesis with Auditory Distortion Products. *Computer Music Journal* 38(4).
+- Gutiérrez, E., Haworth, C., and Cádiz, R. (2024). Generating Sonic Phantoms with Quadratic Difference Tone Spectrum Synthesis. *Computer Music Journal* 47(3):1-16.
+- Kendall, G.S., Haworth, C., and Cádiz, R.F. (2014). Sound Synthesis with Auditory Distortion Products. *Computer Music Journal* 38(4).
 
 ## Credits
 
-- Original Max/MSP implementation: Gutierrez, E. and Cadiz, R.
-- SuperCollider port: [Your name]
+- Original Max/MSP implementation: Gutiérrez, E. and Cádiz, R.
+- SuperCollider port: Marcin Pietruszewski
