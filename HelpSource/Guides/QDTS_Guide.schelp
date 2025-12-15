@@ -29,7 +29,7 @@ code::
 f_c, f_c + f_d, f_c + 2*f_d, f_c + 3*f_d, ...
 ::
 
-SUBSECTION:: The Solver
+SUBSECTION:: Newton's Method
 
 The link::Classes/QDTSSolver:: UGen solves a system of nonlinear equations to find amplitude coefficients (A_1, A_2, ... A_n) such that when the corresponding sinusoids are played together, the resulting quadratic distortion products approximate a target harmonic spectrum.
 
