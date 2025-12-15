@@ -9,7 +9,7 @@
  * Port from Max/MSP implementation by Gutierrez, E and Cadiz, R.
  */
 
-Solver : MultiOutUGen {
+QDTSSolver : MultiOutUGen {
     *kr { |numHarmonics = 8 ... targets|
         // Outputs: [A_1 (normalized), A_2, ..., A_n+1, error]
         // Total outputs = numHarmonics + 2
@@ -80,18 +80,18 @@ QDTS {
 
     // Get the solver UGen (returns array of [amplitudes, error])
     solver {
-        ^Solver.kr(numHarmonics, *targets);
+        ^QDTSSolver.kr(numHarmonics, *targets);
     }
 
     // Get just the amplitudes (without error)
     amplitudes {
-        var sig = Solver.kr(numHarmonics, *targets);
+        var sig = QDTSSolver.kr(numHarmonics, *targets);
         ^sig[0..numHarmonics];
     }
 
     // Get the estimation error
     error {
-        var sig = Solver.kr(numHarmonics, *targets);
+        var sig = QDTSSolver.kr(numHarmonics, *targets);
         ^sig[numHarmonics + 1];
     }
 

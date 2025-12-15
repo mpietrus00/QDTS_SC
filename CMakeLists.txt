@@ -40,21 +40,21 @@ else()
     set(CMAKE_SHARED_MODULE_SUFFIX ".so")
 endif()
 
-# Build the Solver plugin
-add_library(Solver MODULE
+# Build the QDTSSolver plugin
+add_library(QDTSSolver MODULE
     plugins/Solver/Solver.cpp
 )
 
-target_link_libraries(Solver PRIVATE Eigen3::Eigen)
+target_link_libraries(QDTSSolver PRIVATE Eigen3::Eigen)
 
 # Set output directory
-set_target_properties(Solver PROPERTIES
+set_target_properties(QDTSSolver PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins"
     PREFIX ""
 )
 
 # Installation
-install(TARGETS Solver
+install(TARGETS QDTSSolver
     LIBRARY DESTINATION "lib/SuperCollider/plugins"
 )
 
