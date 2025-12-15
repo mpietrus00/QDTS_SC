@@ -504,23 +504,24 @@ SynthDef(\qdtsCommonFate, {|out = 0, carrierPitch = 1000, targetPitch = 100,
 
 // COMMON FATE: Both voices modulate spectrum in sync → perceived as ONE source
 (
-~sharedLFO = { LFTri.kr(0.3).range(0.1, 0.8) };
 ~commonFate1 = Synth(\qdtsCommonFate, [\carrierPitch, 1000, \targetPitch, 100, \pan, -0.4]);
 ~commonFate2 = Synth(\qdtsCommonFate, [\carrierPitch, 1400, \targetPitch, 100, \pan, 0.4]);
 
-// Update both with same modulation
-fork {
+// Update both with same modulation (language-side LFO)
+~commonFateRoutine = fork {
+    var phase = 0;
     loop {
-        var mod = ~sharedLFO.value;
+        var mod = sin(phase).linlin(-1, 1, 0.1, 0.8);  // Triangle-ish wave
         ~commonFate1.set(\t1mod, mod, \t2mod, mod * 0.6);
         ~commonFate2.set(\t1mod, mod, \t2mod, mod * 0.6);
+        phase = phase + 0.03;  // ~0.3 Hz at 50ms update rate
         0.05.wait;
     }
 }
 )
 
 // Stop common fate demo
-(~commonFate1.free; ~commonFate2.free;)
+(~commonFateRoutine.stop; ~commonFate1.free; ~commonFate2.free;)
 
 // INDEPENDENT FATE: Different modulation → perceived as TWO sources
 (
@@ -528,7 +529,7 @@ fork {
 ~indep2 = Synth(\qdtsCommonFate, [\carrierPitch, 1400, \targetPitch, 100, \pan, 0.4]);
 
 // Update with different modulation rates
-fork {
+~indepRoutine = fork {
     var phase1 = 0, phase2 = 0;
     loop {
         phase1 = phase1 + 0.02;
@@ -541,7 +542,7 @@ fork {
 )
 
 // Stop independent fate demo
-(~indep1.free; ~indep2.free;)
+(~indepRoutine.stop; ~indep1.free; ~indep2.free;)
 
 // ----------------------------------------
 // 9d. HARMONIC SIEVE: Capturing stray partials
