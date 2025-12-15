@@ -209,9 +209,53 @@ Pbind(
 )
 ::
 
+SECTION:: Perceptual and Musical Considerations
+
+SUBSECTION:: Carrier Frequency Range
+
+The carrier complex should sit in the ear's most sensitive frequency range of strong::1kHz-5kHz::. A carrier around 2.5kHz typically works well, though per-listener differences apply.
+
+SUBSECTION:: Number of Harmonics
+
+Synthesizing more than 16 QDT harmonics is unlikely to be effective because:
+LIST::
+## QDTs above ~1kHz have only a weak effect
+## More components make the carrier complex more audible as a competing stream
+::
+
+SUBSECTION:: Amplitude Modulation
+
+Due to the quadratic nature of ADPs, amplitude modulation requires the strong::square root:: of the intended modulation depth:
+
+code::
+// To get modulation depth of 0.5 on the QDTS,
+// apply sqrt(0.5) ≈ 0.707 to the carrier
+var mod = SinOsc.kr(1).range(0, 1).sqrt;
+::
+
+SUBSECTION:: Continuous vs Transient Sounds
+
+Continuous sounds work better than transient ones. Since auditory streaming is an active, attentional process, continuous sounds enable the listener to "tune in" to the QDTS stream.
+
+SUBSECTION:: Listening Fatigue
+
+Durations of less than 2 minutes are advised to avoid temporary threshold shift (TTS). Exposure time depends on signal level and frequency range.
+
+SUBSECTION:: Spatial Considerations
+
+When listening over loudspeakers:
+LIST::
+## QDT spectra localize close to the head (like headphone reproduction)
+## Nodes and antinodes in the room affect where QDTS is most audible
+## Head movements can greatly affect audibility and lateralization
+## For low QDT frequencies, peaks appear at fixed physical locations
+::
+
+NOTE:: Paradoxically, QDTs are easier to hear over loudspeakers than headphones, since over headphones both carrier and QDTS are close to the ear.
+
 SECTION:: References
 
 LIST::
-## Kendall, G.S., Haworth, C., and Cadiz, R.F. (2014). "Sound Synthesis with Auditory Distortion Products." Computer Music Journal 38(4).
-## Original Max/MSP implementation by Gutierrez, E. and Cadiz, R.
+## Gutiérrez, E., Haworth, C., and Cádiz, R. (2024). "Generating Sonic Phantoms with Quadratic Difference Tone Spectrum Synthesis." Computer Music Journal 47(3):1-16.
+## Kendall, G.S., Haworth, C., and Cádiz, R.F. (2014). "Sound Synthesis with Auditory Distortion Products." Computer Music Journal 38(4).
 ::
