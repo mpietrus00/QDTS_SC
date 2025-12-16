@@ -589,6 +589,66 @@ SynthDef(\qdtsShimmer, {|out = 0, carrierPitch = 1500, targetPitch = 100,
 x = Synth(\qdtsShimmer);
 x.set(\gate, 0);  // Release
 
+// ----------------------------------------
+// Pattern: Blooming melody
+// ----------------------------------------
+(
+Pdef(\bloomMelody,
+    Pbind(
+        \type, \on,
+        \instrument, \qdtsSpectralEnv,
+        \dur, 0.5,
+        \carrierPitch, Pseq([1200, 1350, 1500, 1350, 1200, 1100, 1200, 1350], inf),
+        \targetPitch, Pseq([100, 110, 120, 110, 100, 90, 100, 110], inf),
+        \amp, 0.25
+    )
+).play;
+)
+
+Pdef(\bloomMelody).stop;
+
+// ----------------------------------------
+// Pattern: Reverse bloom chords
+// ----------------------------------------
+(
+Pdef(\reverseChords,
+    Pbind(
+        \type, \on,
+        \instrument, \qdtsReverseEnv,
+        \dur, 1.0,
+        \carrierPitch, Pseq([
+            [1200, 1500, 1800],  // Chord 1
+            [1100, 1400, 1700],  // Chord 2
+            [1300, 1600, 1900],  // Chord 3
+            [1000, 1300, 1600]   // Chord 4
+        ], inf).flatten,
+        \targetPitch, 100,
+        \amp, 0.2,
+        \strum, 0.05  // Slight strum effect
+    )
+).play;
+)
+
+Pdef(\reverseChords).stop;
+
+// ----------------------------------------
+// Pattern: Random spectral blooms
+// ----------------------------------------
+(
+Pdef(\randomBlooms,
+    Pbind(
+        \type, \on,
+        \instrument, \qdtsSpectralEnv,
+        \dur, Pwhite(0.3, 0.8),
+        \carrierPitch, Pwhite(1000, 2000),
+        \targetPitch, Pwhite(80, 150),
+        \amp, 0.2
+    )
+).play;
+)
+
+Pdef(\randomBlooms).stop;
+
 // ============================================================================
 // 11. GALLOPING RHYTHM (Tempo-dependent streaming)
 // ============================================================================
