@@ -284,9 +284,19 @@ QDTS.class;
 /*
 IMPORTANT NOTES:
 
-1. AVOID ZERO TARGETS
-   Setting any target to exactly 0 can cause solver instability and loud clicks.
-   Always use: target.max(0.01) or target.clip(0.01, 2.0)
+1. TARGET VALUE RANGE
+   Target values (t0, t1, t2...) represent RELATIVE amplitude ratios.
+   - Minimum: > 0 (use 0.01 as safe minimum to avoid instability)
+   - Maximum: No strict limit, but typical range is 0.01 to 2.0
+   - Values can exceed 1.0 (e.g., t1=1.5 means 2nd harmonic is 1.5x the 1st)
+   Always clamp: target.max(0.01) or target.clip(0.01, 2.0)
+
+   Common spectra:
+   - [1, 0.5, 0.33, 0.25]  - Sawtooth (1/n rolloff)
+   - [1, 0.01, 0.5, 0.01]  - Square-ish (odd harmonics)
+   - [0.5, 1, 0.5, 0.25]   - 2nd harmonic dominant
+   - [1, 1, 1, 1]          - Equal harmonics (bright)
+   - [1, 0.1, 0.05, 0.02]  - Mellow/sine-like
 
 2. MONITOR ERROR OUTPUT
    The last output of QDTSSolver is the estimation error.
@@ -303,8 +313,8 @@ IMPORTANT NOTES:
    For safety, wrap output in Limiter.ar(signal, 0.9)
 
 4. CARRIER vs TARGET PITCH
-   - Carrier: The base frequency
-   - Target: The difference between successive partials
+   - Carrier: The base frequency (optimal range: 1-5 kHz)
+   - Target: The difference between successive partials (the perceived pitch)
    - Frequencies generated: carrier, carrier+target, carrier+2*target, etc.
 
 5. NUMBER OF HARMONICS
