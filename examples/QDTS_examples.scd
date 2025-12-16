@@ -933,11 +933,11 @@ x.set(\rate, 0.03);
 x.free;
 
 // ----------------------------------------
-// Simpler discrete Shepard (stepped octaves)
+// Smooth discrete Shepard (overlapping notes)
 // ----------------------------------------
 (
 SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
-    amp = 0.2, atk = 0.1, rel = 0.3|
+    amp = 0.2, dur = 0.8|
 
     var centerFreq = 1500;
     var bandwidth = 1.5;
@@ -946,7 +946,8 @@ SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
     var octaveFromCenter = log2(carrierPitch / centerFreq);
     var ampEnv = exp(octaveFromCenter.squared.neg / bandwidth);
 
-    var env = EnvGen.kr(Env.perc(atk, rel), doneAction: 2);
+    // Smooth symmetrical envelope for seamless overlap
+    var env = EnvGen.kr(Env.sine(dur), doneAction: 2);
 
     var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
     var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
@@ -956,11 +957,14 @@ SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
 }).add;
 )
 
-// Ascending Shepard scale - each "step" plays multiple octaves
+// Ascending Shepard scale - smooth endless rising
+// Notes overlap significantly for seamless illusion
 (
 ~shepardScale = fork {
     var baseNote = 100;  // Base frequency
     var numSteps = 12;   // Steps per octave
+    var stepDur = 0.25;  // Time between steps
+    var noteDur = 0.6;   // Note duration (overlap = noteDur - stepDur)
 
     loop {
         numSteps.do {|step|
@@ -973,11 +977,12 @@ SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
                     Synth(\qdtsShepardNote, [
                         \carrierPitch, carrierFreq,
                         \targetPitch, freq * 0.5,
-                        \amp, 0.15
+                        \dur, noteDur,
+                        \amp, 0.12
                     ]);
                 };
             };
-            0.3.wait;
+            stepDur.wait;
         };
     };
 };
@@ -985,11 +990,13 @@ SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
 
 ~shepardScale.stop;
 
-// Descending Shepard scale
+// Descending Shepard scale - smooth endless falling
 (
 ~shepardDown = fork {
     var baseNote = 100;
     var numSteps = 12;
+    var stepDur = 0.25;
+    var noteDur = 0.6;
 
     loop {
         (numSteps - 1).reverseDo {|step|
@@ -1001,11 +1008,12 @@ SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
                     Synth(\qdtsShepardNote, [
                         \carrierPitch, carrierFreq,
                         \targetPitch, freq * 0.5,
-                        \amp, 0.15
+                        \dur, noteDur,
+                        \amp, 0.12
                     ]);
                 };
             };
-            0.3.wait;
+            stepDur.wait;
         };
     };
 };
