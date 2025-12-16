@@ -104,6 +104,12 @@ x.set(\t0, 1, \t1, 0.5, \t2, 0.33, \t3, 0.25);    // Sawtooth
 x.set(\t0, 1, \t1, 1, \t2, 1, \t3, 1);            // Bright/harsh
 x.set(\t0, 1, \t1, 0.1, \t2, 0.05, \t3, 0.02);    // Mellow
 
+// Non-standard spectra (upper harmonic dominant)
+x.set(\t0, 0.2, \t1, 1, \t2, 0.1, \t3, 0.1);      // 2nd harmonic dominant (hollow)
+x.set(\t0, 0.1, \t1, 0.1, \t2, 1, \t3, 0.1);      // 3rd harmonic dominant (nasal)
+x.set(\t0, 0.3, \t1, 0.3, \t2, 0.3, \t3, 1);      // 4th harmonic dominant
+x.set(\t0, 0.5, \t1, 0.8, \t2, 1, \t3, 0.6);      // Peak at 3rd, gradual rolloff
+
 // Change pitch
 x.set(\carrierPitch, 2000, \targetPitch, 150);
 x.set(\carrierPitch, 500, \targetPitch, 50);
