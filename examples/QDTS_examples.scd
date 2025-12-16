@@ -343,26 +343,20 @@ x.free;
 
 (
 SynthDef(\qdtsVowelMorph, {|out = 0, carrierPitch = 1500, targetPitch = 150, amp = 0.2|
-    var mx = MouseX.kr(0, 1);  // front-back
-    var my = MouseY.kr(0, 1);  // open-closed
+    // Smooth mouse input to avoid glitches
+    var mx = Lag.kr(MouseX.kr(0, 1), 0.3);  // front-back
+    var my = Lag.kr(MouseY.kr(0, 1), 0.3);  // open-closed
 
-    // Interpolate between vowel shapes
-    // Front vowels (EE-like) have more high harmonics
-    // Back vowels (OO-like) have rapid rolloff
-    // Open vowels (AH-like) have strong low harmonics
-    // Closed vowels have weaker harmonics overall
-
+    // Interpolate between vowel shapes using safer ranges
+    // Avoid multiplication that can produce very small values
     var t0 = 1;
-    var t1 = LinLin.kr(mx, 0, 1, 0.3, 0.8) * LinLin.kr(my, 0, 1, 0.9, 0.5);
-    var t2 = LinLin.kr(mx, 0, 1, 0.2, 0.6) * LinLin.kr(my, 0, 1, 0.8, 0.3);
-    var t3 = LinLin.kr(mx, 0, 1, 0.6, 0.1) * LinLin.kr(my, 0, 1, 0.5, 0.2);
-    var t4 = LinLin.kr(mx, 0, 1, 0.7, 0.05) * LinLin.kr(my, 0, 1, 0.3, 0.1);
-    var t5 = LinLin.kr(mx, 0, 1, 0.4, 0.02) * LinLin.kr(my, 0, 1, 0.2, 0.05);
+    var t1 = LinLin.kr(mx + my, 0, 2, 0.3, 0.9);
+    var t2 = LinLin.kr(mx, 0, 1, 0.2, 0.7);
+    var t3 = LinLin.kr(mx, 0, 1, 0.6, 0.15);
+    var t4 = LinLin.kr(mx, 0, 1, 0.5, 0.1);
+    var t5 = LinLin.kr(mx, 0, 1, 0.3, 0.08);
 
-    var amps = QDTSSolver.kr(6,
-        t0, t1.max(0.01), t2.max(0.01),
-        t3.max(0.01), t4.max(0.01), t5.max(0.01)
-    );
+    var amps = QDTSSolver.kr(6, t0, t1, t2, t3, t4, t5);
     var freqs = 7.collect {|i| carrierPitch + (i * targetPitch) };
     var sines = 7.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
 
@@ -371,8 +365,7 @@ SynthDef(\qdtsVowelMorph, {|out = 0, carrierPitch = 1500, targetPitch = 150, amp
 )
 
 // Move mouse to explore vowel space
-// Left = front (EE), Right = back (OO)
-// Top = open (AH), Bottom = closed
+// Left = front (EE-like, brighter), Right = back (OO-like, darker)
 y = Synth(\qdtsVowelMorph);
 y.free;
 
