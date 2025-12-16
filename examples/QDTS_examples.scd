@@ -291,12 +291,17 @@ IMPORTANT NOTES:
    - Values can exceed 1.0 (e.g., t1=1.5 means 2nd harmonic is 1.5x the 1st)
    Always clamp: target.max(0.01) or target.clip(0.01, 2.0)
 
-   Common spectra:
+   Common spectra (fundamental dominant):
    - [1, 0.5, 0.33, 0.25]  - Sawtooth (1/n rolloff)
    - [1, 0.01, 0.5, 0.01]  - Square-ish (odd harmonics)
-   - [0.5, 1, 0.5, 0.25]   - 2nd harmonic dominant
    - [1, 1, 1, 1]          - Equal harmonics (bright)
    - [1, 0.1, 0.05, 0.02]  - Mellow/sine-like
+
+   Non-standard spectra (upper harmonic dominant):
+   - [0.2, 1, 0.1, 0.1]    - 2nd harmonic dominant (hollow)
+   - [0.1, 0.1, 1, 0.1]    - 3rd harmonic dominant (nasal)
+   - [0.3, 0.3, 0.3, 1]    - 4th harmonic dominant
+   - [0.5, 0.8, 1, 0.6]    - Peak at 3rd, gradual rolloff
 
 2. MONITOR ERROR OUTPUT
    The last output of QDTSSolver is the estimation error.

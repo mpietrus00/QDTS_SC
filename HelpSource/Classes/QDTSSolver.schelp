@@ -26,13 +26,20 @@ LIST::
 ## strong::Normalization::: Output amplitudes are normalized by the solver
 ::
 
-Common spectral shapes:
+Common spectral shapes (fundamental dominant):
 LIST::
 ## code::[1, 0.5, 0.33, 0.25]:: - Sawtooth-like (1/n rolloff)
 ## code::[1, 0.01, 0.5, 0.01]:: - Square-ish (odd harmonics)
-## code::[0.5, 1, 0.5, 0.25]:: - 2nd harmonic dominant
 ## code::[1, 1, 1, 1]:: - Equal harmonics (bright/harsh)
 ## code::[1, 0.1, 0.05, 0.02]:: - Mellow/sine-like
+::
+
+Non-standard spectral shapes (upper harmonic dominant):
+LIST::
+## code::[0.2, 1, 0.1, 0.1]:: - 2nd harmonic dominant (hollow)
+## code::[0.1, 0.1, 1, 0.1]:: - 3rd harmonic dominant (nasal)
+## code::[0.3, 0.3, 0.3, 1]:: - 4th harmonic dominant
+## code::[0.5, 0.8, 1, 0.6]:: - Peak at 3rd, gradual rolloff
 ::
 
 CLASSMETHODS::
