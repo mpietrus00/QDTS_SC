@@ -381,7 +381,120 @@ SynthDef(\qdtsVowelSeq, {|out = 0, carrierPitch = 1500, targetPitch = 150, amp =
 (~vowelRoutine.stop; ~vowelSynth.free;)
 
 // ============================================================================
-// 9. TIPS AND TROUBLESHOOTING
+// 9. BEATING AND ROUGHNESS
+// ============================================================================
+
+/*
+Two QDTS voices slightly detuned create beating (slow) or roughness (fast).
+- Detune < 5 Hz: Slow beating, phasing effect
+- Detune 5-15 Hz: Fast beating, tremolo-like
+- Detune 15-30 Hz: Roughness, dissonance
+- Detune > 30 Hz: Separate pitches emerge
+*/
+
+(
+SynthDef(\qdtsBeating, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+    amp = 0.2, detune = 2|
+
+    // Two QDTS voices with slight detune
+    var targets = [1, 0.5, 0.33, 0.25];
+
+    var amps1 = QDTSSolver.kr(4, *targets);
+    var amps2 = QDTSSolver.kr(4, *targets);
+
+    var freqs1 = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var freqs2 = 5.collect {|i| (carrierPitch + detune) + (i * targetPitch) };
+
+    var sines1 = 5.collect {|i| SinOsc.ar(freqs1[i]) * amps1[i] };
+    var sines2 = 5.collect {|i| SinOsc.ar(freqs2[i]) * amps2[i] };
+
+    var sig = (sines1.sum + sines2.sum) * 0.5;
+
+    Out.ar(out, Limiter.ar(sig * amp, 0.9) ! 2);
+}).add;
+)
+
+// Slow beating (2 Hz) - gentle phasing
+x = Synth(\qdtsBeating, [\detune, 2]);
+
+// Faster beating (8 Hz) - tremolo-like
+x.set(\detune, 8);
+
+// Roughness zone (20 Hz) - dissonant, tense
+x.set(\detune, 20);
+
+// Very rough (35 Hz) - harsh, two pitches emerging
+x.set(\detune, 35);
+
+// Back to gentle
+x.set(\detune, 1.5);
+
+x.free;
+
+// ----------------------------------------
+// Stereo beating (detuned left/right)
+// ----------------------------------------
+(
+SynthDef(\qdtsStereoBeating, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+    amp = 0.2, detune = 3|
+
+    var targets = [1, 0.5, 0.33, 0.25];
+
+    var amps1 = QDTSSolver.kr(4, *targets);
+    var amps2 = QDTSSolver.kr(4, *targets);
+
+    // Left channel: base pitch
+    var freqsL = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sinesL = 5.collect {|i| SinOsc.ar(freqsL[i]) * amps1[i] };
+
+    // Right channel: detuned
+    var freqsR = 5.collect {|i| (carrierPitch + detune) + (i * targetPitch) };
+    var sinesR = 5.collect {|i| SinOsc.ar(freqsR[i]) * amps2[i] };
+
+    var sigL = sinesL.sum;
+    var sigR = sinesR.sum;
+
+    Out.ar(out, Limiter.ar([sigL, sigR] * amp, 0.9));
+}).add;
+)
+
+// Creates a widening stereo effect
+y = Synth(\qdtsStereoBeating, [\detune, 3]);
+y.set(\detune, 5);   // Wider
+y.set(\detune, 0.5); // Subtle
+y.free;
+
+// ----------------------------------------
+// Beating with different spectra per voice
+// ----------------------------------------
+(
+SynthDef(\qdtsSpectralBeating, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+    amp = 0.2, detune = 2|
+
+    // Voice 1: Sawtooth-like
+    var amps1 = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    // Voice 2: Hollow (2nd harmonic dominant)
+    var amps2 = QDTSSolver.kr(4, 0.3, 1, 0.2, 0.1);
+
+    var freqs1 = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var freqs2 = 5.collect {|i| (carrierPitch + detune) + (i * targetPitch) };
+
+    var sines1 = 5.collect {|i| SinOsc.ar(freqs1[i]) * amps1[i] };
+    var sines2 = 5.collect {|i| SinOsc.ar(freqs2[i]) * amps2[i] };
+
+    var sig = (sines1.sum + sines2.sum) * 0.5;
+
+    Out.ar(out, Limiter.ar(sig * amp, 0.9) ! 2);
+}).add;
+)
+
+// Two different timbres beating against each other
+z = Synth(\qdtsSpectralBeating, [\detune, 2]);
+z.set(\detune, 5);
+z.free;
+
+// ============================================================================
+// 10. TIPS AND TROUBLESHOOTING
 // ============================================================================
 
 /*
