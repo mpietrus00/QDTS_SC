@@ -284,7 +284,145 @@ QDTS.class;
 )
 
 // ============================================================================
-// 8. TIPS AND TROUBLESHOOTING
+// 8. FORMANT SHAPING (Vowel-like Sounds)
+// ============================================================================
+
+/*
+Formants are resonant frequencies that give vowels their characteristic sound.
+By shaping the harmonic spectrum, QDTS can approximate vowel qualities.
+
+These are artistic approximations - not precise formant synthesis, but they
+capture the essential spectral character of each vowel.
+*/
+
+(
+SynthDef(\qdtsFormant, {|out = 0, carrierPitch = 1500, targetPitch = 150,
+    amp = 0.2, t0 = 1, t1 = 0.5, t2 = 0.33, t3 = 0.25, t4 = 0.2, t5 = 0.16|
+
+    var amps = QDTSSolver.kr(6,
+        t0.max(0.01), t1.max(0.01), t2.max(0.01),
+        t3.max(0.01), t4.max(0.01), t5.max(0.01)
+    );
+    var freqs = 7.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 7.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+// Create synth
+x = Synth(\qdtsFormant, [\carrierPitch, 1500, \targetPitch, 150]);
+
+// Vowel presets - execute each line to hear the difference
+
+// "AH" (as in "father") - open, strong low harmonics
+x.set(\t0, 1, \t1, 0.9, \t2, 0.5, \t3, 0.3, \t4, 0.15, \t5, 0.1);
+
+// "EE" (as in "see") - bright, emphasis on higher harmonics
+x.set(\t0, 1, \t1, 0.3, \t2, 0.2, \t3, 0.5, \t4, 0.7, \t5, 0.4);
+
+// "OO" (as in "boot") - dark, rapid rolloff
+x.set(\t0, 1, \t1, 0.4, \t2, 0.1, \t3, 0.05, \t4, 0.02, \t5, 0.01);
+
+// "EH" (as in "bed") - mid-range emphasis
+x.set(\t0, 1, \t1, 0.7, \t2, 0.8, \t3, 0.4, \t4, 0.2, \t5, 0.1);
+
+// "OH" (as in "go") - rounded, low-mid emphasis
+x.set(\t0, 1, \t1, 0.8, \t2, 0.6, \t3, 0.2, \t4, 0.1, \t5, 0.05);
+
+// "IH" (as in "bit") - between EE and EH
+x.set(\t0, 1, \t1, 0.5, \t2, 0.4, \t3, 0.6, \t4, 0.4, \t5, 0.2);
+
+x.free;
+
+// ----------------------------------------
+// Vowel morphing with mouse control
+// ----------------------------------------
+// X-axis: front (EE) to back (OO)
+// Y-axis: open (AH) to closed
+
+(
+SynthDef(\qdtsVowelMorph, {|out = 0, carrierPitch = 1500, targetPitch = 150, amp = 0.2|
+    var mx = MouseX.kr(0, 1);  // front-back
+    var my = MouseY.kr(0, 1);  // open-closed
+
+    // Interpolate between vowel shapes
+    // Front vowels (EE-like) have more high harmonics
+    // Back vowels (OO-like) have rapid rolloff
+    // Open vowels (AH-like) have strong low harmonics
+    // Closed vowels have weaker harmonics overall
+
+    var t0 = 1;
+    var t1 = LinLin.kr(mx, 0, 1, 0.3, 0.8) * LinLin.kr(my, 0, 1, 0.9, 0.5);
+    var t2 = LinLin.kr(mx, 0, 1, 0.2, 0.6) * LinLin.kr(my, 0, 1, 0.8, 0.3);
+    var t3 = LinLin.kr(mx, 0, 1, 0.6, 0.1) * LinLin.kr(my, 0, 1, 0.5, 0.2);
+    var t4 = LinLin.kr(mx, 0, 1, 0.7, 0.05) * LinLin.kr(my, 0, 1, 0.3, 0.1);
+    var t5 = LinLin.kr(mx, 0, 1, 0.4, 0.02) * LinLin.kr(my, 0, 1, 0.2, 0.05);
+
+    var amps = QDTSSolver.kr(6,
+        t0, t1.max(0.01), t2.max(0.01),
+        t3.max(0.01), t4.max(0.01), t5.max(0.01)
+    );
+    var freqs = 7.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 7.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+// Move mouse to explore vowel space
+// Left = front (EE), Right = back (OO)
+// Top = open (AH), Bottom = closed
+y = Synth(\qdtsVowelMorph);
+y.free;
+
+// ----------------------------------------
+// Animated vowel sequence
+// ----------------------------------------
+(
+SynthDef(\qdtsVowelSeq, {|out = 0, carrierPitch = 1500, targetPitch = 150, amp = 0.2,
+    t0 = 1, t1 = 0.5, t2 = 0.33, t3 = 0.25, t4 = 0.2, t5 = 0.16|
+
+    var amps = QDTSSolver.kr(6,
+        t0.max(0.01), t1.max(0.01), t2.max(0.01),
+        t3.max(0.01), t4.max(0.01), t5.max(0.01)
+    );
+    var freqs = 7.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 7.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+// Vowel sequence: AH -> EE -> OO -> EH -> OH (loops)
+(
+~vowels = [
+    [1, 0.9, 0.5, 0.3, 0.15, 0.1],   // AH
+    [1, 0.3, 0.2, 0.5, 0.7, 0.4],    // EE
+    [1, 0.4, 0.1, 0.05, 0.02, 0.01], // OO
+    [1, 0.7, 0.8, 0.4, 0.2, 0.1],    // EH
+    [1, 0.8, 0.6, 0.2, 0.1, 0.05]    // OH
+];
+~vowelNames = ["AH", "EE", "OO", "EH", "OH"];
+
+~vowelSynth = Synth(\qdtsVowelSeq);
+~vowelRoutine = fork {
+    var idx = 0;
+    loop {
+        var v = ~vowels[idx];
+        (~vowelNames[idx] ++ " vowel").postln;
+        ~vowelSynth.set(\t0, v[0], \t1, v[1], \t2, v[2], \t3, v[3], \t4, v[4], \t5, v[5]);
+        idx = (idx + 1) % ~vowels.size;
+        1.5.wait;  // Hold each vowel for 1.5 seconds
+    }
+};
+)
+
+// Stop vowel sequence
+(~vowelRoutine.stop; ~vowelSynth.free;)
+
+// ============================================================================
+// 9. TIPS AND TROUBLESHOOTING
 // ============================================================================
 
 /*
