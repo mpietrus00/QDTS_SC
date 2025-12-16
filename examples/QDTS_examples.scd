@@ -777,10 +777,11 @@ Synth(\qdtsGlide, [\carrierStart, 1000, \carrierEnd, 3000, \dur, 0.5]);
 // ----------------------------------------
 (
 SynthDef(\qdtsExpGlide, {|out = 0, carrierStart = 1000, carrierEnd = 2000,
-    targetPitch = 100, amp = 0.2, dur = 2|
+    targetPitch = 100, amp = 0.2, sustain = 2, atk = 0.02, rel = 0.05|
 
-    var carrierPitch = XLine.kr(carrierStart, carrierEnd, dur, doneAction: 2);
-    var env = EnvGen.kr(Env.linen(0.05, dur - 0.1, 0.05));
+    var glideDur = sustain.max(0.1);
+    var carrierPitch = XLine.kr(carrierStart, carrierEnd, glideDur);
+    var env = EnvGen.kr(Env.linen(atk, glideDur - atk - rel, rel), doneAction: 2);
 
     var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
     var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
@@ -791,7 +792,7 @@ SynthDef(\qdtsExpGlide, {|out = 0, carrierStart = 1000, carrierEnd = 2000,
 )
 
 // Exponential rise (octave glide)
-Synth(\qdtsExpGlide, [\carrierStart, 1000, \carrierEnd, 2000, \dur, 2]);
+Synth(\qdtsExpGlide, [\carrierStart, 1000, \carrierEnd, 2000, \sustain, 2]);
 
 // ----------------------------------------
 // Vibrato (pitch oscillation)
@@ -828,9 +829,11 @@ x.free;
 (
 Pdef(\glideMelody,
     Pbind(
-        \type, \on,
         \instrument, \qdtsExpGlide,
         \dur, 0.8,
+        \sustain, 0.75,
+        \atk, 0.02,
+        \rel, 0.08,
         \carrierStart, Pseq([1000, 1200, 1400, 1200], inf),
         \carrierEnd, Pseq([1200, 1400, 1600, 1000], inf),
         \targetPitch, 100,
@@ -966,7 +969,7 @@ SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
             // Play same note in multiple octaves simultaneously
             5.do {|oct|
                 var carrierFreq = freq * (2 ** oct);
-                if(carrierFreq > 300 && carrierFreq < 4000) {
+                if((carrierFreq > 300) and: { carrierFreq < 4000 }) {
                     Synth(\qdtsShepardNote, [
                         \carrierPitch, carrierFreq,
                         \targetPitch, freq * 0.5,
@@ -994,7 +997,7 @@ SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
 
             5.do {|oct|
                 var carrierFreq = freq * (2 ** oct);
-                if(carrierFreq > 300 && carrierFreq < 4000) {
+                if((carrierFreq > 300) and: { carrierFreq < 4000 }) {
                     Synth(\qdtsShepardNote, [
                         \carrierPitch, carrierFreq,
                         \targetPitch, freq * 0.5,
