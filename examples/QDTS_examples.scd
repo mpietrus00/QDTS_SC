@@ -336,42 +336,6 @@ x.set(\t0, 1, \t1, 0.5, \t2, 0.4, \t3, 0.6, \t4, 0.4, \t5, 0.2);
 x.free;
 
 // ----------------------------------------
-// Vowel morphing with mouse control
-// ----------------------------------------
-// X-axis: EE (left) to OO (right)
-// Interpolates between two stable vowel presets
-
-(
-SynthDef(\qdtsVowelMorph, {|out = 0, carrierPitch = 1500, targetPitch = 150, amp = 0.2|
-    // Heavy smoothing on mouse to prevent solver instability
-    var mx = Lag2.kr(MouseX.kr(0, 1), 0.5);
-
-    // EE vowel (bright): [1, 0.3, 0.2, 0.5, 0.7, 0.4]
-    // OO vowel (dark):   [1, 0.4, 0.15, 0.1, 0.08, 0.05]
-    // Simple crossfade between two stable presets
-    var t0 = 1;
-    var t1 = LinLin.kr(mx, 0, 1, 0.3, 0.4);
-    var t2 = LinLin.kr(mx, 0, 1, 0.2, 0.15);
-    var t3 = LinLin.kr(mx, 0, 1, 0.5, 0.1);
-    var t4 = LinLin.kr(mx, 0, 1, 0.7, 0.08);
-    var t5 = LinLin.kr(mx, 0, 1, 0.4, 0.05);
-
-    // Smooth the solver outputs too
-    var amps = QDTSSolver.kr(6, t0, t1, t2, t3, t4, t5);
-    var smoothAmps = 7.collect {|i| Lag.kr(amps[i], 0.1) };
-
-    var freqs = 7.collect {|i| carrierPitch + (i * targetPitch) };
-    var sines = 7.collect {|i| SinOsc.ar(freqs[i]) * smoothAmps[i] };
-
-    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
-}).add;
-)
-
-// Move mouse left-right: EE (bright) <-> OO (dark)
-y = Synth(\qdtsVowelMorph);
-y.free;
-
-// ----------------------------------------
 // Animated vowel sequence
 // ----------------------------------------
 (
