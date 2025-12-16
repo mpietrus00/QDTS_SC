@@ -494,7 +494,192 @@ z.set(\detune, 5);
 z.free;
 
 // ============================================================================
-// 10. TIPS AND TROUBLESHOOTING
+// 10. SPECTRAL ENVELOPE (Per-harmonic dynamics)
+// ============================================================================
+
+/*
+Different attack/decay times per harmonic creates evolving timbres.
+- Fast attack on fundamentals, slow on upper harmonics = "bloom" effect
+- Slow attack on all = pad-like
+- Fast decay on upper harmonics = natural instrument-like decay
+*/
+
+(
+SynthDef(\qdtsSpectralEnv, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+    amp = 0.3, gate = 1|
+
+    // Different envelope times per harmonic
+    var atkTimes = [0.01, 0.05, 0.1, 0.2, 0.3];   // Fundamental fastest
+    var relTimes = [0.8, 0.6, 0.4, 0.3, 0.2];     // Upper harmonics decay faster
+
+    var envs = 5.collect {|i|
+        EnvGen.kr(Env.perc(atkTimes[i], relTimes[i]), gate)
+    };
+
+    // Static target spectrum
+    var targets = [1, 0.6, 0.4, 0.25, 0.15];
+    var amps = QDTSSolver.kr(5, *targets);
+
+    var freqs = 6.collect {|i| carrierPitch + (i * targetPitch) };
+    // Apply per-harmonic envelopes
+    var sines = 6.collect {|i| SinOsc.ar(freqs[i]) * amps[i] * envs[i.min(4)] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+// Trigger notes - upper harmonics bloom in after attack
+Synth(\qdtsSpectralEnv, [\carrierPitch, 1200, \targetPitch, 100]);
+Synth(\qdtsSpectralEnv, [\carrierPitch, 1500, \targetPitch, 120]);
+Synth(\qdtsSpectralEnv, [\carrierPitch, 1800, \targetPitch, 80]);
+
+// ----------------------------------------
+// Reverse spectral envelope (upper harmonics attack first)
+// ----------------------------------------
+(
+SynthDef(\qdtsReverseEnv, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+    amp = 0.3, gate = 1|
+
+    // Upper harmonics attack first, fundamental last
+    var atkTimes = [0.3, 0.2, 0.1, 0.05, 0.01];
+    var relTimes = [0.5, 0.5, 0.5, 0.5, 0.5];
+
+    var envs = 5.collect {|i|
+        EnvGen.kr(Env.perc(atkTimes[i], relTimes[i]), gate)
+    };
+
+    var targets = [1, 0.6, 0.4, 0.25, 0.15];
+    var amps = QDTSSolver.kr(5, *targets);
+
+    var freqs = 6.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 6.collect {|i| SinOsc.ar(freqs[i]) * amps[i] * envs[i.min(4)] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+// "Reverse bloom" - brightness arrives before body
+Synth(\qdtsReverseEnv, [\carrierPitch, 1400, \targetPitch, 110]);
+
+// ----------------------------------------
+// Sustained with spectral shimmer
+// ----------------------------------------
+(
+SynthDef(\qdtsShimmer, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+    amp = 0.2, gate = 1, atk = 0.3, rel = 1.0|
+
+    var mainEnv = EnvGen.kr(Env.asr(atk, 1, rel), gate, doneAction: 2);
+
+    // Each harmonic has slight independent movement
+    var shimmer = 5.collect {|i|
+        LFNoise1.kr(0.5 + (i * 0.2)).range(0.7, 1.0)
+    };
+
+    var targets = [1, 0.5, 0.33, 0.25, 0.2];
+    var amps = QDTSSolver.kr(5, *targets);
+
+    var freqs = 6.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 6.collect {|i| SinOsc.ar(freqs[i]) * amps[i] * shimmer[i.min(4)] };
+
+    Out.ar(out, Limiter.ar(sines.sum * mainEnv * amp, 0.9) ! 2);
+}).add;
+)
+
+// Sustained shimmering tone
+x = Synth(\qdtsShimmer);
+x.set(\gate, 0);  // Release
+
+// ============================================================================
+// 11. GALLOPING RHYTHM (Tempo-dependent streaming)
+// ============================================================================
+
+/*
+Classic auditory scene analysis demo: ABA_ABA_ pattern
+- At slow tempos: hear integrated "gallop" rhythm (da-da-DUM)
+- At fast tempos: segregates into two separate streams (A-A-A... and B...B...)
+
+Based on: Bregman, A.S. (1990). Auditory Scene Analysis. MIT Press.
+*/
+
+(
+SynthDef(\qdtsGallop, {|out = 0, carrierPitch = 1000, targetPitch = 100,
+    amp = 0.15, atk = 0.005, rel = 0.1|
+
+    var env = EnvGen.kr(Env.perc(atk, rel), doneAction: 2);
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp, 0.9) ! 2);
+}).add;
+)
+
+// ----------------------------------------
+// Slow gallop - hear as integrated ABA rhythm
+// ----------------------------------------
+(
+~gallopA = 1000;  // Low pitch
+~gallopB = 1600;  // High pitch
+
+~gallopSlow = fork {
+    loop {
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopA, \rel, 0.15]);
+        0.3.wait;
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopB, \rel, 0.15]);
+        0.3.wait;
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopA, \rel, 0.15]);
+        0.3.wait;
+        0.3.wait;  // Rest
+    }
+};
+)
+
+~gallopSlow.stop;
+
+// ----------------------------------------
+// Fast gallop - segregates into two streams
+// ----------------------------------------
+(
+~gallopFast = fork {
+    loop {
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopA, \rel, 0.06]);
+        0.1.wait;
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopB, \rel, 0.06]);
+        0.1.wait;
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopA, \rel, 0.06]);
+        0.1.wait;
+        0.1.wait;  // Rest
+    }
+};
+)
+
+~gallopFast.stop;
+
+// ----------------------------------------
+// Accelerating gallop - hear the transition
+// ----------------------------------------
+(
+~gallopAccel = fork {
+    var dur = 0.35;
+    100.do {
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopA, \rel, dur * 0.5]);
+        dur.wait;
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopB, \rel, dur * 0.5]);
+        dur.wait;
+        Synth(\qdtsGallop, [\carrierPitch, ~gallopA, \rel, dur * 0.5]);
+        dur.wait;
+        dur.wait;  // Rest
+        dur = (dur * 0.97).max(0.08);  // Gradually speed up
+        ("Tempo: " ++ (60 / dur / 4).round(1) ++ " BPM").postln;
+    };
+    "Done - did you hear the streams separate?".postln;
+};
+)
+
+~gallopAccel.stop;
+
+// ============================================================================
+// 12. TIPS AND TROUBLESHOOTING
 // ============================================================================
 
 /*
