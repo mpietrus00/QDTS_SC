@@ -870,7 +870,148 @@ x.set(\rate, 2, \carrierLow, 1200, \carrierHigh, 1800);
 x.free;
 
 // ============================================================================
-// 13. TIPS AND TROUBLESHOOTING
+// 13. SHEPARD TONE (Endless ascending/descending illusion)
+// ============================================================================
+
+/*
+A Shepard tone creates the illusion of endlessly rising or falling pitch
+by stacking octaves with amplitude envelopes that fade in/out at the edges.
+
+Combining with QDTS adds rich ADP harmonics to the illusion.
+*/
+
+(
+SynthDef(\qdtsShepard, {|out = 0, baseFreq = 100, targetPitch = 50,
+    amp = 0.15, rate = 0.1, direction = 1|
+
+    // Shepard uses multiple octaves with bell-curve amplitude
+    var numOctaves = 5;
+    var centerFreq = 1500;  // Peak amplitude frequency
+    var bandwidth = 1.5;    // Octaves of bandwidth
+
+    // Continuously moving phase (0-1 represents one octave cycle)
+    var phase = Phasor.kr(0, rate * direction / ControlRate.ir, 0, 1);
+
+    var sig = numOctaves.collect {|i|
+        // Each voice offset by octave fraction
+        var voicePhase = (phase + (i / numOctaves)).mod(1);
+
+        // Carrier sweeps through one octave
+        var carrierPitch = baseFreq * (2 ** (voicePhase + 2));  // Range ~400-3200 Hz
+
+        // Bell-curve amplitude based on frequency distance from center
+        var octaveFromCenter = log2(carrierPitch / centerFreq);
+        var ampEnv = exp(octaveFromCenter.squared.neg / bandwidth);
+
+        // QDTS synthesis for this voice
+        var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+        var freqs = 5.collect {|j| carrierPitch + (j * targetPitch * voicePhase.linlin(0, 1, 0.8, 1.2)) };
+        var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * amps[j] };
+
+        sines.sum * ampEnv
+    }.sum;
+
+    Out.ar(out, Limiter.ar(sig * amp, 0.9) ! 2);
+}).add;
+)
+
+// Endless rising Shepard-QDTS
+x = Synth(\qdtsShepard, [\rate, 0.05, \direction, 1]);
+
+// Faster rise
+x.set(\rate, 0.1);
+
+// Endless falling
+x.set(\direction, -1);
+
+// Slower, more subtle
+x.set(\rate, 0.03);
+
+x.free;
+
+// ----------------------------------------
+// Simpler discrete Shepard (stepped octaves)
+// ----------------------------------------
+(
+SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
+    amp = 0.2, atk = 0.1, rel = 0.3|
+
+    var centerFreq = 1500;
+    var bandwidth = 1.5;
+
+    // Amplitude based on distance from center frequency
+    var octaveFromCenter = log2(carrierPitch / centerFreq);
+    var ampEnv = exp(octaveFromCenter.squared.neg / bandwidth);
+
+    var env = EnvGen.kr(Env.perc(atk, rel), doneAction: 2);
+
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * ampEnv * amp, 0.9) ! 2);
+}).add;
+)
+
+// Ascending Shepard scale - each "step" plays multiple octaves
+(
+~shepardScale = fork {
+    var baseNote = 100;  // Base frequency
+    var numSteps = 12;   // Steps per octave
+
+    loop {
+        numSteps.do {|step|
+            var freq = baseNote * (2 ** (step / numSteps));
+
+            // Play same note in multiple octaves simultaneously
+            5.do {|oct|
+                var carrierFreq = freq * (2 ** oct);
+                if(carrierFreq > 300 && carrierFreq < 4000) {
+                    Synth(\qdtsShepardNote, [
+                        \carrierPitch, carrierFreq,
+                        \targetPitch, freq * 0.5,
+                        \amp, 0.15
+                    ]);
+                };
+            };
+            0.3.wait;
+        };
+    };
+};
+)
+
+~shepardScale.stop;
+
+// Descending Shepard scale
+(
+~shepardDown = fork {
+    var baseNote = 100;
+    var numSteps = 12;
+
+    loop {
+        (numSteps - 1).reverseDo {|step|
+            var freq = baseNote * (2 ** (step / numSteps));
+
+            5.do {|oct|
+                var carrierFreq = freq * (2 ** oct);
+                if(carrierFreq > 300 && carrierFreq < 4000) {
+                    Synth(\qdtsShepardNote, [
+                        \carrierPitch, carrierFreq,
+                        \targetPitch, freq * 0.5,
+                        \amp, 0.15
+                    ]);
+                };
+            };
+            0.3.wait;
+        };
+    };
+};
+)
+
+~shepardDown.stop;
+
+// ============================================================================
+// 14. TIPS AND TROUBLESHOOTING
 // ============================================================================
 
 /*
