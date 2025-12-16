@@ -338,34 +338,36 @@ x.free;
 // ----------------------------------------
 // Vowel morphing with mouse control
 // ----------------------------------------
-// X-axis: front (EE) to back (OO)
-// Y-axis: open (AH) to closed
+// X-axis: EE (left) to OO (right)
+// Interpolates between two stable vowel presets
 
 (
 SynthDef(\qdtsVowelMorph, {|out = 0, carrierPitch = 1500, targetPitch = 150, amp = 0.2|
-    // Smooth mouse input to avoid glitches
-    var mx = Lag.kr(MouseX.kr(0, 1), 0.3);  // front-back
-    var my = Lag.kr(MouseY.kr(0, 1), 0.3);  // open-closed
+    // Heavy smoothing on mouse to prevent solver instability
+    var mx = Lag2.kr(MouseX.kr(0, 1), 0.5);
 
-    // Interpolate between vowel shapes using safer ranges
-    // Avoid multiplication that can produce very small values
+    // EE vowel (bright): [1, 0.3, 0.2, 0.5, 0.7, 0.4]
+    // OO vowel (dark):   [1, 0.4, 0.15, 0.1, 0.08, 0.05]
+    // Simple crossfade between two stable presets
     var t0 = 1;
-    var t1 = LinLin.kr(mx + my, 0, 2, 0.3, 0.9);
-    var t2 = LinLin.kr(mx, 0, 1, 0.2, 0.7);
-    var t3 = LinLin.kr(mx, 0, 1, 0.6, 0.15);
-    var t4 = LinLin.kr(mx, 0, 1, 0.5, 0.1);
-    var t5 = LinLin.kr(mx, 0, 1, 0.3, 0.08);
+    var t1 = LinLin.kr(mx, 0, 1, 0.3, 0.4);
+    var t2 = LinLin.kr(mx, 0, 1, 0.2, 0.15);
+    var t3 = LinLin.kr(mx, 0, 1, 0.5, 0.1);
+    var t4 = LinLin.kr(mx, 0, 1, 0.7, 0.08);
+    var t5 = LinLin.kr(mx, 0, 1, 0.4, 0.05);
 
+    // Smooth the solver outputs too
     var amps = QDTSSolver.kr(6, t0, t1, t2, t3, t4, t5);
+    var smoothAmps = 7.collect {|i| Lag.kr(amps[i], 0.1) };
+
     var freqs = 7.collect {|i| carrierPitch + (i * targetPitch) };
-    var sines = 7.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+    var sines = 7.collect {|i| SinOsc.ar(freqs[i]) * smoothAmps[i] };
 
     Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
 }).add;
 )
 
-// Move mouse to explore vowel space
-// Left = front (EE-like, brighter), Right = back (OO-like, darker)
+// Move mouse left-right: EE (bright) <-> OO (dark)
 y = Synth(\qdtsVowelMorph);
 y.free;
 
