@@ -739,7 +739,138 @@ SynthDef(\qdtsGallop, {|out = 0, carrierPitch = 1000, targetPitch = 100,
 ~gallopAccel.stop;
 
 // ============================================================================
-// 12. TIPS AND TROUBLESHOOTING
+// 12. PITCH GLIDE (Carrier sweeps)
+// ============================================================================
+
+/*
+Sweeping the carrier pitch while maintaining spectral shape creates
+glissando effects. The perceived pitch follows the target pitch spacing,
+while the carrier determines the register/brightness.
+*/
+
+(
+SynthDef(\qdtsGlide, {|out = 0, carrierStart = 1000, carrierEnd = 2000,
+    targetPitch = 100, amp = 0.2, dur = 2|
+
+    var carrierPitch = Line.kr(carrierStart, carrierEnd, dur, doneAction: 2);
+    var env = EnvGen.kr(Env.linen(0.05, dur - 0.1, 0.05));
+
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp, 0.9) ! 2);
+}).add;
+)
+
+// Rising glide
+Synth(\qdtsGlide, [\carrierStart, 800, \carrierEnd, 2000, \dur, 2]);
+
+// Falling glide
+Synth(\qdtsGlide, [\carrierStart, 2500, \carrierEnd, 800, \dur, 3]);
+
+// Fast sweep
+Synth(\qdtsGlide, [\carrierStart, 1000, \carrierEnd, 3000, \dur, 0.5]);
+
+// ----------------------------------------
+// Exponential glide (more musical)
+// ----------------------------------------
+(
+SynthDef(\qdtsExpGlide, {|out = 0, carrierStart = 1000, carrierEnd = 2000,
+    targetPitch = 100, amp = 0.2, dur = 2|
+
+    var carrierPitch = XLine.kr(carrierStart, carrierEnd, dur, doneAction: 2);
+    var env = EnvGen.kr(Env.linen(0.05, dur - 0.1, 0.05));
+
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp, 0.9) ! 2);
+}).add;
+)
+
+// Exponential rise (octave glide)
+Synth(\qdtsExpGlide, [\carrierStart, 1000, \carrierEnd, 2000, \dur, 2]);
+
+// ----------------------------------------
+// Vibrato (pitch oscillation)
+// ----------------------------------------
+(
+SynthDef(\qdtsVibrato, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+    amp = 0.2, vibRate = 5, vibDepth = 30|
+
+    var vibrato = SinOsc.kr(vibRate) * vibDepth;
+    var pitch = carrierPitch + vibrato;
+
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| pitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+// Gentle vibrato
+x = Synth(\qdtsVibrato, [\vibRate, 5, \vibDepth, 20]);
+
+// Wide, slow vibrato
+x.set(\vibRate, 3, \vibDepth, 50);
+
+// Fast, narrow vibrato (shimmer)
+x.set(\vibRate, 8, \vibDepth, 10);
+
+x.free;
+
+// ----------------------------------------
+// Pattern: Gliding melody
+// ----------------------------------------
+(
+Pdef(\glideMelody,
+    Pbind(
+        \type, \on,
+        \instrument, \qdtsExpGlide,
+        \dur, 0.8,
+        \carrierStart, Pseq([1000, 1200, 1400, 1200], inf),
+        \carrierEnd, Pseq([1200, 1400, 1600, 1000], inf),
+        \targetPitch, 100,
+        \amp, 0.2
+    )
+).play;
+)
+
+Pdef(\glideMelody).stop;
+
+// ----------------------------------------
+// Siren effect (continuous up/down)
+// ----------------------------------------
+(
+SynthDef(\qdtsSiren, {|out = 0, carrierLow = 800, carrierHigh = 2000,
+    targetPitch = 100, amp = 0.2, rate = 0.5|
+
+    var carrierPitch = SinOsc.kr(rate).range(carrierLow, carrierHigh);
+
+    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+// Slow siren
+x = Synth(\qdtsSiren, [\rate, 0.3]);
+
+// Faster siren
+x.set(\rate, 1);
+
+// Ambulance-style
+x.set(\rate, 2, \carrierLow, 1200, \carrierHigh, 1800);
+
+x.free;
+
+// ============================================================================
+// 13. TIPS AND TROUBLESHOOTING
 // ============================================================================
 
 /*
