@@ -888,27 +888,29 @@ SynthDef(\qdtsShepard, {|out = 0, baseFreq = 100, targetPitch = 50,
     amp = 0.15, rate = 0.1, direction = 1|
 
     // Shepard uses multiple octaves with bell-curve amplitude
-    var numOctaves = 5;
-    var centerFreq = 1500;  // Peak amplitude frequency
-    var bandwidth = 1.5;    // Octaves of bandwidth
+    var numVoices = 6;
+    var sweepOctaves = 6;   // Each voice sweeps 6 octaves
+    var centerFreq = 800;   // Peak amplitude frequency (geometric center)
+    var bandwidth = 1.2;    // Narrower bell for clean fade at edges
 
-    // Continuously moving phase (0-1 represents one octave cycle)
+    // Continuously moving phase (0-1 represents full sweep cycle)
     var phase = Phasor.kr(0, rate * direction / ControlRate.ir, 0, 1);
 
-    var sig = numOctaves.collect {|i|
-        // Each voice offset by octave fraction
-        var voicePhase = (phase + (i / numOctaves)).mod(1);
+    var sig = numVoices.collect {|i|
+        // Each voice offset evenly across the cycle
+        var voicePhase = (phase + (i / numVoices)).mod(1);
 
-        // Carrier sweeps through one octave
-        var carrierPitch = baseFreq * (2 ** (voicePhase + 2));  // Range ~400-3200 Hz
+        // Carrier sweeps full range: baseFreq to baseFreq * 2^sweepOctaves
+        // ~100Hz to ~6400Hz with default baseFreq
+        var carrierPitch = baseFreq * (2 ** (voicePhase * sweepOctaves));
 
-        // Bell-curve amplitude based on frequency distance from center
+        // Bell-curve amplitude - voices fade to silence at wrap points
         var octaveFromCenter = log2(carrierPitch / centerFreq);
         var ampEnv = exp(octaveFromCenter.squared.neg / bandwidth);
 
         // QDTS synthesis for this voice
         var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
-        var freqs = 5.collect {|j| carrierPitch + (j * targetPitch * voicePhase.linlin(0, 1, 0.8, 1.2)) };
+        var freqs = 5.collect {|j| carrierPitch + (j * targetPitch) };
         var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * amps[j] };
 
         sines.sum * ampEnv
