@@ -1054,6 +1054,251 @@ SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
 
 ~shepardDown.stop;
 
+// ----------------------------------------
+// Shepard with envelope control (ASR)
+// ----------------------------------------
+(
+SynthDef(\qdtsShepEnv, {|out = 0, freq = 440, targetPitch = 50,
+    amp = 0.1, shepAmp = 1, atk = 0.01, sus = 0.3, rel = 0.1|
+
+    var env = EnvGen.kr(Env.linen(atk, sus, rel), doneAction: 2);
+
+    var qdtsAmps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|j| freq + (j * targetPitch) };
+    var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * qdtsAmps[j] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp * shepAmp, 0.9) ! 2);
+}).add;
+)
+
+// ----------------------------------------
+// Variation 1: Sharp attack, long release (pad-like)
+// ----------------------------------------
+(
+~shepardPad = Tdef(\shepardPad, {
+    var numSteps = 12;
+    var stepDur = 0.4;
+    var phase = 0;
+
+    loop {
+        numSteps.do {|step|
+            var intervals, amps;
+            #intervals, amps = Shepard(5, 12, 0, 2, phase);
+
+            5.do {|i|
+                Synth(\qdtsShepEnv, [
+                    \freq, (intervals[i] + 60).midicps,
+                    \shepAmp, amps[i],
+                    \atk, 0.02,
+                    \sus, 0.2,
+                    \rel, 0.5,
+                    \targetPitch, 80,
+                    \amp, 0.08
+                ]);
+            };
+            phase = (phase + (1/numSteps)).mod(1);
+            stepDur.wait;
+        };
+    };
+}).play;
+)
+
+~shepardPad.stop;
+
+// ----------------------------------------
+// Variation 2: Slow attack, slow release (swelling)
+// ----------------------------------------
+(
+~shepardSwell = Tdef(\shepardSwell, {
+    var numSteps = 12;
+    var stepDur = 0.5;
+    var phase = 0;
+
+    loop {
+        numSteps.do {|step|
+            var intervals, amps;
+            #intervals, amps = Shepard(5, 12, 0, 2, phase);
+
+            5.do {|i|
+                Synth(\qdtsShepEnv, [
+                    \freq, (intervals[i] + 72).midicps,
+                    \shepAmp, amps[i],
+                    \atk, 0.25,
+                    \sus, 0.1,
+                    \rel, 0.25,
+                    \targetPitch, 100,
+                    \amp, 0.08
+                ]);
+            };
+            phase = (phase + (1/numSteps)).mod(1);
+            stepDur.wait;
+        };
+    };
+}).play;
+)
+
+~shepardSwell.stop;
+
+// ----------------------------------------
+// Variation 3: Percussive (fast attack, no sustain)
+// ----------------------------------------
+(
+~shepardPerc = Tdef(\shepardPerc, {
+    var numSteps = 12;
+    var stepDur = 0.15;
+    var phase = 0;
+
+    loop {
+        numSteps.do {|step|
+            var intervals, amps;
+            #intervals, amps = Shepard(5, 12, 0, 2, phase);
+
+            5.do {|i|
+                Synth(\qdtsShepEnv, [
+                    \freq, (intervals[i] + 84).midicps,
+                    \shepAmp, amps[i],
+                    \atk, 0.005,
+                    \sus, 0.0,
+                    \rel, 0.15,
+                    \targetPitch, 200,
+                    \amp, 0.1
+                ]);
+            };
+            phase = (phase + (1/numSteps)).mod(1);
+            stepDur.wait;
+        };
+    };
+}).play;
+)
+
+~shepardPerc.stop;
+
+// ----------------------------------------
+// Variation 4: Reverse envelope (fade in)
+// ----------------------------------------
+(
+~shepardReverse = Tdef(\shepardReverse, {
+    var numSteps = 12;
+    var stepDur = 0.35;
+    var phase = 0;
+
+    loop {
+        numSteps.do {|step|
+            var intervals, amps;
+            #intervals, amps = Shepard(5, 12, 0, 2, phase);
+
+            5.do {|i|
+                Synth(\qdtsShepEnv, [
+                    \freq, (intervals[i] + 66).midicps,
+                    \shepAmp, amps[i],
+                    \atk, 0.3,
+                    \sus, 0.0,
+                    \rel, 0.02,
+                    \targetPitch, 120,
+                    \amp, 0.08
+                ]);
+            };
+            phase = (phase + (1/numSteps)).mod(1);
+            stepDur.wait;
+        };
+    };
+}).play;
+)
+
+~shepardReverse.stop;
+
+// ----------------------------------------
+// Variation 5: Descending with varied spectra
+// ----------------------------------------
+(
+SynthDef(\qdtsShepSpectrum, {|out = 0, freq = 440, targetPitch = 50,
+    amp = 0.1, shepAmp = 1, atk = 0.01, sus = 0.3, rel = 0.1,
+    t0 = 1, t1 = 0.5, t2 = 0.33, t3 = 0.25|
+
+    var env = EnvGen.kr(Env.linen(atk, sus, rel), doneAction: 2);
+
+    var qdtsAmps = QDTSSolver.kr(4, t0, t1, t2, t3);
+    var freqs = 5.collect {|j| freq + (j * targetPitch) };
+    var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * qdtsAmps[j] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp * shepAmp, 0.9) ! 2);
+}).add;
+)
+
+(
+~shepardSpectrum = Tdef(\shepardSpectrum, {
+    var numSteps = 12;
+    var stepDur = 0.3;
+    var phase = 0;
+    // Cycle through different spectral shapes
+    var spectra = [
+        [1, 0.5, 0.33, 0.25],   // Sawtooth
+        [1, 0.01, 0.5, 0.01],   // Square-ish
+        [0.2, 1, 0.1, 0.1],    // Hollow
+        [0.1, 0.1, 1, 0.1]     // Nasal
+    ];
+    var specIdx = 0;
+
+    loop {
+        numSteps.do {|step|
+            var intervals, amps, spec;
+            #intervals, amps = Shepard(5, 12, 0, 2, phase);
+            spec = spectra[specIdx];
+
+            5.do {|i|
+                Synth(\qdtsShepSpectrum, [
+                    \freq, (intervals[i] + 72).midicps,
+                    \shepAmp, amps[i],
+                    \atk, 0.02,
+                    \sus, 0.15,
+                    \rel, 0.2,
+                    \targetPitch, 80,
+                    \amp, 0.08,
+                    \t0, spec[0], \t1, spec[1], \t2, spec[2], \t3, spec[3]
+                ]);
+            };
+            phase = (phase - (1/numSteps)).mod(1);  // Descending
+            stepDur.wait;
+        };
+        specIdx = (specIdx + 1).mod(spectra.size);
+    };
+}).play;
+)
+
+~shepardSpectrum.stop;
+
+// ----------------------------------------
+// Variation 6: Random step order (non-linear Shepard)
+// ----------------------------------------
+(
+~shepardRandom = Tdef(\shepardRandom, {
+    var numSteps = 12;
+    var stepDur = 0.2;
+    var phase = 0;
+
+    loop {
+        phase = 1.0.rand;  // Random position in cycle
+        var intervals, amps;
+        #intervals, amps = Shepard(5, 12, 0, 2, phase);
+
+        5.do {|i|
+            Synth(\qdtsShepEnv, [
+                \freq, (intervals[i] + 60).midicps,
+                \shepAmp, amps[i],
+                \atk, 0.01,
+                \sus, 0.1,
+                \rel, 0.15,
+                \targetPitch, 100,
+                \amp, 0.08
+            ]);
+        };
+        stepDur.wait;
+    };
+}).play;
+)
+
+~shepardRandom.stop;
+
 // Pmono approach: continuous control of the Shepard synth
 (
 Pdef(\shepardGlide,
