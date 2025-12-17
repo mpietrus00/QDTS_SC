@@ -1231,12 +1231,12 @@ SynthDef(\qdtsShepSpectrum, {|out = 0, freq = 440, targetPitch = 50,
     var numSteps = 12;
     var stepDur = 0.3;
     var phase = 0;
-    // Cycle through different spectral shapes
+    // Cycle through different spectral shapes (use min 0.2 for stability)
     var spectra = [
         [1, 0.5, 0.33, 0.25],   // Sawtooth
-        [1, 0.01, 0.5, 0.01],   // Square-ish
-        [0.2, 1, 0.1, 0.1],    // Hollow
-        [0.1, 0.1, 1, 0.1]     // Nasal
+        [1, 0.2, 0.6, 0.2],    // Square-ish (odd harmonics)
+        [0.5, 1, 0.3, 0.2],    // 2nd harmonic dominant
+        [0.4, 0.3, 1, 0.3]     // 3rd harmonic dominant
     ];
     var specIdx = 0;
 
@@ -1254,7 +1254,7 @@ SynthDef(\qdtsShepSpectrum, {|out = 0, freq = 440, targetPitch = 50,
                     \sus, 0.15,
                     \rel, 0.2,
                     \targetPitch, 80,
-                    \amp, 0.08,
+                    \amp, 0.06,
                     \t0, spec[0], \t1, spec[1], \t2, spec[2], \t3, spec[3]
                 ]);
             };
