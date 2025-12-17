@@ -969,6 +969,99 @@ x.free;
 }.play;
 )
 
+// ----------------------------------------
+// Pattern-based Shepard scale
+// ----------------------------------------
+
+// SynthDef for individual Shepard notes
+(
+SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
+    amp = 0.1, shepAmp = 1, dur = 0.5|
+
+    var env = EnvGen.kr(Env.sine(dur), doneAction: 2);
+
+    var qdtsAmps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+    var freqs = 5.collect {|j| freq + (j * targetPitch) };
+    var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * qdtsAmps[j] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp * shepAmp, 0.9) ! 2);
+}).add;
+)
+
+// Ascending Shepard pattern - plays 5 octaves per step
+(
+Pdef(\shepardUp,
+    Pbind(
+        \instrument, \qdtsShepNote,
+        \dur, 0.3,
+        \sustain, 0.5,  // Overlap for smoothness
+        \stepsPerOct, 12,
+        \step, Pseq((0..11), inf),
+        // Calculate intervals and amps using Shepard class
+        \shepData, Pfunc {|ev|
+            Shepard(5, 12, ev[\step] / ev[\stepsPerOct] * 12)
+        },
+        \octave, Pstutter(5, Pn(Pseries(0, 1, inf), inf)).mod(5),
+        \voice, Pseq((0..4), inf),
+        \freq, Pfunc {|ev|
+            var intervals = ev[\shepData][0];
+            (intervals[ev[\voice]] + 48).midicps  // Base at midi 48
+        },
+        \shepAmp, Pfunc {|ev|
+            var amps = ev[\shepData][1];
+            amps[ev[\voice]]
+        },
+        \targetPitch, 50,
+        \amp, 0.08
+    )
+).play;
+)
+
+Pdef(\shepardUp).stop;
+
+// Descending Shepard pattern
+(
+Pdef(\shepardDown,
+    Pbind(
+        \instrument, \qdtsShepNote,
+        \dur, 0.3,
+        \sustain, 0.5,
+        \stepsPerOct, 12,
+        \step, Pseq((11..0), inf),
+        \shepData, Pfunc {|ev|
+            Shepard(5, 12, ev[\step] / ev[\stepsPerOct] * 12)
+        },
+        \octave, Pstutter(5, Pn(Pseries(0, 1, inf), inf)).mod(5),
+        \voice, Pseq((0..4), inf),
+        \freq, Pfunc {|ev|
+            var intervals = ev[\shepData][0];
+            (intervals[ev[\voice]] + 48).midicps
+        },
+        \shepAmp, Pfunc {|ev|
+            var amps = ev[\shepData][1];
+            amps[ev[\voice]]
+        },
+        \targetPitch, 50,
+        \amp, 0.08
+    )
+).play;
+)
+
+Pdef(\shepardDown).stop;
+
+// Simpler approach: Pmono for continuous glide
+(
+Pdef(\shepardGlide,
+    Pmono(\qdtsShepard,
+        \slope, Pseq([0.05, 0.08, -0.05, -0.03], inf),
+        \dur, 4,
+        \shift, Pwhite(-1.0, 1.0)
+    )
+).play;
+)
+
+Pdef(\shepardGlide).stop;
+
 // ============================================================================
 // 14. TIPS AND TROUBLESHOOTING
 // ============================================================================
