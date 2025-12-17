@@ -880,40 +880,31 @@ x.free;
 A Shepard tone creates the illusion of endlessly rising or falling pitch
 by stacking octaves with amplitude envelopes that fade in/out at the edges.
 
+Uses the Shepard class from adclib (Alberto de Campo).
 Combining with QDTS adds rich ADP harmonics to the illusion.
+
+Requires: Quarks.install("adclib")
 */
 
+// ----------------------------------------
+// Continuous Shepard with QDTS
+// ----------------------------------------
 (
-SynthDef(\qdtsShepard, {|out = 0, baseFreq = 100, targetPitch = 50,
-    amp = 0.15, rate = 0.1, direction = 1|
+SynthDef(\qdtsShepard, {|out = 0, baseMidi = 60, targetPitch = 50,
+    amp = 0.15, slope = 0.05, shift = 0|
 
-    // Shepard uses multiple octaves with bell-curve amplitude
-    var numVoices = 6;
-    var sweepOctaves = 6;   // Each voice sweeps 6 octaves
-    var centerFreq = 800;   // Peak amplitude frequency (geometric center)
-    var bandwidth = 1.2;    // Narrower bell for clean fade at edges
+    var intervals, shepAmps;
+    #intervals, shepAmps = Shepard.kr(5, slope, 12, shift, 2);
 
-    // Continuously moving phase (0-1 represents full sweep cycle)
-    var phase = Phasor.kr(0, rate * direction / ControlRate.ir, 0, 1);
-
-    var sig = numVoices.collect {|i|
-        // Each voice offset evenly across the cycle
-        var voicePhase = (phase + (i / numVoices)).mod(1);
-
-        // Carrier sweeps full range: baseFreq to baseFreq * 2^sweepOctaves
-        // ~100Hz to ~6400Hz with default baseFreq
-        var carrierPitch = baseFreq * (2 ** (voicePhase * sweepOctaves));
-
-        // Bell-curve amplitude - voices fade to silence at wrap points
-        var octaveFromCenter = log2(carrierPitch / centerFreq);
-        var ampEnv = exp(octaveFromCenter.squared.neg / bandwidth);
+    var sig = 5.collect {|i|
+        var carrierPitch = (intervals[i] + baseMidi).midicps;
 
         // QDTS synthesis for this voice
-        var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+        var qdtsAmps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
         var freqs = 5.collect {|j| carrierPitch + (j * targetPitch) };
-        var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * amps[j] };
+        var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * qdtsAmps[j] };
 
-        sines.sum * ampEnv
+        sines.sum * shepAmps[i]
     }.sum;
 
     Out.ar(out, Limiter.ar(sig * amp, 0.9) ! 2);
@@ -921,107 +912,62 @@ SynthDef(\qdtsShepard, {|out = 0, baseFreq = 100, targetPitch = 50,
 )
 
 // Endless rising Shepard-QDTS
-x = Synth(\qdtsShepard, [\rate, 0.05, \direction, 1]);
+x = Synth(\qdtsShepard, [\slope, 0.05]);
 
 // Faster rise
-x.set(\rate, 0.1);
+x.set(\slope, 0.1);
 
 // Endless falling
-x.set(\direction, -1);
+x.set(\slope, -0.05);
 
-// Slower, more subtle
-x.set(\rate, 0.03);
+// Shift pitch height without changing direction
+x.set(\shift, 1);
+x.set(\shift, -1);
 
 x.free;
 
 // ----------------------------------------
-// Smooth discrete Shepard (overlapping notes)
+// Interactive: mouse controls slope and shift
 // ----------------------------------------
 (
-SynthDef(\qdtsShepardNote, {|out = 0, carrierPitch = 1000, targetPitch = 80,
-    amp = 0.2, dur = 0.8|
+{
+    var slope = MouseX.kr(-0.1, 0.1);
+    var shift = MouseY.kr(2, -2);
 
-    var centerFreq = 1500;
-    var bandwidth = 1.5;
+    var intervals, shepAmps;
+    #intervals, shepAmps = Shepard.kr(5, slope, 12, shift, 2);
 
-    // Amplitude based on distance from center frequency
-    var octaveFromCenter = log2(carrierPitch / centerFreq);
-    var ampEnv = exp(octaveFromCenter.squared.neg / bandwidth);
+    var sig = 5.collect {|i|
+        var carrierPitch = (intervals[i] + 60).midicps;
+        var qdtsAmps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+        var freqs = 5.collect {|j| carrierPitch + (j * 50) };
+        var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * qdtsAmps[j] };
+        sines.sum * shepAmps[i]
+    }.sum;
 
-    // Smooth symmetrical envelope for seamless overlap
-    var env = EnvGen.kr(Env.sine(dur), doneAction: 2);
-
-    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
-    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
-    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
-
-    Out.ar(out, Limiter.ar(sines.sum * env * ampEnv * amp, 0.9) ! 2);
-}).add;
+    Limiter.ar(sig * 0.15, 0.9) ! 2
+}.play;
 )
 
-// Ascending Shepard scale - smooth endless rising
-// Notes overlap significantly for seamless illusion
+// ----------------------------------------
+// Static Shepard chord with QDTS
+// ----------------------------------------
 (
-~shepardScale = fork {
-    var baseNote = 100;  // Base frequency
-    var numSteps = 12;   // Steps per octave
-    var stepDur = 0.25;  // Time between steps
-    var noteDur = 0.6;   // Note duration (overlap = noteDur - stepDur)
+{
+    var intervals, shepAmps;
+    #intervals, shepAmps = Shepard(5, 12, 0);
 
-    loop {
-        numSteps.do {|step|
-            var freq = baseNote * (2 ** (step / numSteps));
+    var sig = 5.collect {|i|
+        var carrierPitch = (intervals[i] + 60).midicps;
+        var qdtsAmps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+        var freqs = 5.collect {|j| carrierPitch + (j * 50) };
+        var sines = 5.collect {|j| SinOsc.ar(freqs[j]) * qdtsAmps[j] };
+        sines.sum * shepAmps[i]
+    }.sum;
 
-            // Play same note in multiple octaves simultaneously
-            5.do {|oct|
-                var carrierFreq = freq * (2 ** oct);
-                if((carrierFreq > 300) and: { carrierFreq < 4000 }) {
-                    Synth(\qdtsShepardNote, [
-                        \carrierPitch, carrierFreq,
-                        \targetPitch, freq * 0.5,
-                        \dur, noteDur,
-                        \amp, 0.12
-                    ]);
-                };
-            };
-            stepDur.wait;
-        };
-    };
-};
+    Limiter.ar(sig * 0.15, 0.9) ! 2
+}.play;
 )
-
-~shepardScale.stop;
-
-// Descending Shepard scale - smooth endless falling
-(
-~shepardDown = fork {
-    var baseNote = 100;
-    var numSteps = 12;
-    var stepDur = 0.25;
-    var noteDur = 0.6;
-
-    loop {
-        (numSteps - 1).reverseDo {|step|
-            var freq = baseNote * (2 ** (step / numSteps));
-
-            5.do {|oct|
-                var carrierFreq = freq * (2 ** oct);
-                if((carrierFreq > 300) and: { carrierFreq < 4000 }) {
-                    Synth(\qdtsShepardNote, [
-                        \carrierPitch, carrierFreq,
-                        \targetPitch, freq * 0.5,
-                        \dur, noteDur,
-                        \amp, 0.12
-                    ]);
-                };
-            };
-            stepDur.wait;
-        };
-    };
-};
-)
-
-~shepardDown.stop;
 
 // ============================================================================
 // 14. TIPS AND TROUBLESHOOTING
