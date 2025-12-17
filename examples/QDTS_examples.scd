@@ -1001,7 +1001,7 @@ Pdef(\shepardUp,
         \shepData, Pfunc {|ev|
             Shepard(5, 12, ev[\step] / ev[\stepsPerOct] * 12)
         },
-        \octave, Pstutter(5, Pn(Pseries(0, 1, inf), inf)).mod(5),
+        \octave, Pdup(5, Pseries(0, 1, inf)).mod(5),
         \voice, Pseq((0..4), inf),
         \freq, Pfunc {|ev|
             var intervals = ev[\shepData][0];
@@ -1031,7 +1031,7 @@ Pdef(\shepardDown,
         \shepData, Pfunc {|ev|
             Shepard(5, 12, ev[\step] / ev[\stepsPerOct] * 12)
         },
-        \octave, Pstutter(5, Pn(Pseries(0, 1, inf), inf)).mod(5),
+        \octave, Pdup(5, Pseries(0, 1, inf)).mod(5),
         \voice, Pseq((0..4), inf),
         \freq, Pfunc {|ev|
             var intervals = ev[\shepData][0];
