@@ -973,12 +973,12 @@ x.free;
 // Pattern-based Shepard scale
 // ----------------------------------------
 
-// SynthDef for individual Shepard notes
+// SynthDef for individual Shepard voice
 (
 SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
-    amp = 0.1, shepAmp = 1, dur = 0.5|
+    amp = 0.1, shepAmp = 1, sustain = 0.5|
 
-    var env = EnvGen.kr(Env.sine(dur), doneAction: 2);
+    var env = EnvGen.kr(Env.sine(sustain), doneAction: 2);
 
     var qdtsAmps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
     var freqs = 5.collect {|j| freq + (j * targetPitch) };
@@ -988,73 +988,71 @@ SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
 }).add;
 )
 
-// Ascending Shepard pattern - plays 5 octaves per step
+// Ascending Shepard - all 5 octave voices play simultaneously per step
 (
-Pdef(\shepardUp,
-    Pbind(
-        \instrument, \qdtsShepNote,
-        \dur, 0.3,
-        \sustain, 0.5,  // Overlap for smoothness
-        \stepsPerOct, 12,
-        \step, Pseq((0..11), inf),
-        // Calculate intervals and amps using Shepard class
-        \shepData, Pfunc {|ev|
-            Shepard(5, 12, ev[\step] / ev[\stepsPerOct] * 12)
-        },
-        \octave, Pdup(5, Pseries(0, 1, inf)).mod(5),
-        \voice, Pseq((0..4), inf),
-        \freq, Pfunc {|ev|
-            var intervals = ev[\shepData][0];
-            (intervals[ev[\voice]] + 48).midicps  // Base at midi 48
-        },
-        \shepAmp, Pfunc {|ev|
-            var amps = ev[\shepData][1];
-            amps[ev[\voice]]
-        },
-        \targetPitch, 50,
-        \amp, 0.08
-    )
-).play;
+~shepardUp = Tdef(\shepardUp, {
+    var numSteps = 12;
+    var stepDur = 0.25;
+    var noteDur = 0.5;
+
+    loop {
+        numSteps.do {|step|
+            var intervals, amps;
+            #intervals, amps = Shepard(5, 12, step / numSteps * 12);
+
+            // Spawn all 5 voices at once
+            5.do {|i|
+                Synth(\qdtsShepNote, [
+                    \freq, (intervals[i] + 48).midicps,
+                    \shepAmp, amps[i],
+                    \sustain, noteDur,
+                    \targetPitch, 50,
+                    \amp, 0.1
+                ]);
+            };
+            stepDur.wait;
+        };
+    };
+}).play;
 )
 
-Pdef(\shepardUp).stop;
+~shepardUp.stop;
 
-// Descending Shepard pattern
+// Descending Shepard
 (
-Pdef(\shepardDown,
-    Pbind(
-        \instrument, \qdtsShepNote,
-        \dur, 0.3,
-        \sustain, 0.5,
-        \stepsPerOct, 12,
-        \step, Pseq((11..0), inf),
-        \shepData, Pfunc {|ev|
-            Shepard(5, 12, ev[\step] / ev[\stepsPerOct] * 12)
-        },
-        \octave, Pdup(5, Pseries(0, 1, inf)).mod(5),
-        \voice, Pseq((0..4), inf),
-        \freq, Pfunc {|ev|
-            var intervals = ev[\shepData][0];
-            (intervals[ev[\voice]] + 48).midicps
-        },
-        \shepAmp, Pfunc {|ev|
-            var amps = ev[\shepData][1];
-            amps[ev[\voice]]
-        },
-        \targetPitch, 50,
-        \amp, 0.08
-    )
-).play;
+~shepardDown = Tdef(\shepardDown, {
+    var numSteps = 12;
+    var stepDur = 0.25;
+    var noteDur = 0.5;
+
+    loop {
+        (numSteps-1).reverseDo {|step|
+            var intervals, amps;
+            #intervals, amps = Shepard(5, 12, step / numSteps * 12);
+
+            5.do {|i|
+                Synth(\qdtsShepNote, [
+                    \freq, (intervals[i] + 48).midicps,
+                    \shepAmp, amps[i],
+                    \sustain, noteDur,
+                    \targetPitch, 50,
+                    \amp, 0.1
+                ]);
+            };
+            stepDur.wait;
+        };
+    };
+}).play;
 )
 
-Pdef(\shepardDown).stop;
+~shepardDown.stop;
 
-// Simpler approach: Pmono for continuous glide
+// Pmono approach: continuous control of the Shepard synth
 (
 Pdef(\shepardGlide,
     Pmono(\qdtsShepard,
-        \slope, Pseq([0.05, 0.08, -0.05, -0.03], inf),
-        \dur, 4,
+        \slope, Pseq([0.05, 0.1, -0.05, -0.1], inf),
+        \dur, 3,
         \shift, Pwhite(-1.0, 1.0)
     )
 ).play;
