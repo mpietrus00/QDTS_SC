@@ -989,16 +989,20 @@ SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
 )
 
 // Ascending Shepard - all 5 octave voices play simultaneously per step
+// Shepard(num, interval, shift, ampExp, masterPhase)
+// masterPhase (0-1) controls position in the cycle
 (
 ~shepardUp = Tdef(\shepardUp, {
     var numSteps = 12;
     var stepDur = 0.25;
     var noteDur = 0.5;
+    var phase = 0;
 
     loop {
         numSteps.do {|step|
             var intervals, amps;
-            #intervals, amps = Shepard(5, 12, step / numSteps * 12);
+            // masterPhase cycles 0-1, ampExp=2 for gaussian-like curve
+            #intervals, amps = Shepard(5, 12, 0, 2, phase);
 
             // Spawn all 5 voices at once
             5.do {|i|
@@ -1010,6 +1014,7 @@ SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
                     \amp, 0.1
                 ]);
             };
+            phase = (phase + (1/numSteps)).mod(1);
             stepDur.wait;
         };
     };
@@ -1024,11 +1029,12 @@ SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
     var numSteps = 12;
     var stepDur = 0.25;
     var noteDur = 0.5;
+    var phase = 0;
 
     loop {
-        (numSteps-1).reverseDo {|step|
+        numSteps.do {|step|
             var intervals, amps;
-            #intervals, amps = Shepard(5, 12, step / numSteps * 12);
+            #intervals, amps = Shepard(5, 12, 0, 2, phase);
 
             5.do {|i|
                 Synth(\qdtsShepNote, [
@@ -1039,6 +1045,7 @@ SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
                     \amp, 0.1
                 ]);
             };
+            phase = (phase - (1/numSteps)).mod(1);
             stepDur.wait;
         };
     };
