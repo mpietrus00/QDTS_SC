@@ -1061,7 +1061,8 @@ SynthDef(\qdtsShepNote, {|out = 0, freq = 440, targetPitch = 50,
 SynthDef(\qdtsShepEnv, {|out = 0, freq = 440, targetPitch = 50,
     amp = 0.1, shepAmp = 1, atk = 0.01, sus = 0.3, rel = 0.1|
 
-    var env = EnvGen.kr(Env.linen(atk, sus, rel), doneAction: 2);
+    // Use sine curves for smooth attack/release (no clicks)
+    var env = EnvGen.kr(Env([0, 1, 1, 0], [atk, sus, rel], \sin), doneAction: 2);
 
     var qdtsAmps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
     var freqs = 5.collect {|j| freq + (j * targetPitch) };
@@ -1215,7 +1216,7 @@ SynthDef(\qdtsShepSpectrum, {|out = 0, freq = 440, targetPitch = 50,
     amp = 0.1, shepAmp = 1, atk = 0.01, sus = 0.3, rel = 0.1,
     t0 = 1, t1 = 0.5, t2 = 0.33, t3 = 0.25|
 
-    var env = EnvGen.kr(Env.linen(atk, sus, rel), doneAction: 2);
+    var env = EnvGen.kr(Env([0, 1, 1, 0], [atk, sus, rel], \sin), doneAction: 2);
 
     var qdtsAmps = QDTSSolver.kr(4, t0, t1, t2, t3);
     var freqs = 5.collect {|j| freq + (j * targetPitch) };
