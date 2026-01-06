@@ -71,7 +71,7 @@ SynthDef(\qdtsEnv, {|out = 0, carrierPitch = 1280, targetPitch = 130,
 )
 
 // Test the SynthDef
-x = Synth(\qdtsEnv, [\carrierPitch, 1000, \targetPitch, 100]);
+x = Synth(\qdtsEnv, [\carrierPitch, 3000, \targetPitch, 100]);
 x.set(\gate, 0); // Release
 
 // ============================================================================
@@ -79,7 +79,7 @@ x.set(\gate, 0); // Release
 // ============================================================================
 
 (
-SynthDef(\qdtsDynamic, {|out = 0, carrierPitch = 1280, targetPitch = 130, amp = 0.2,
+SynthDef(\qdtsDynamic, {|out = 0, carrierPitch = 3280, targetPitch = 130, amp = 0.2,
     t0 = 1, t1 = 0.5, t2 = 0.33, t3 = 0.25|
 
     var t0s = t0.max(0.01);
@@ -111,8 +111,8 @@ x.set(\t0, 0.3, \t1, 0.3, \t2, 0.3, \t3, 1);      // 4th harmonic dominant
 x.set(\t0, 0.5, \t1, 0.8, \t2, 1, \t3, 0.6);      // Peak at 3rd, gradual rolloff
 
 // Change pitch
-x.set(\carrierPitch, 2000, \targetPitch, 150);
-x.set(\carrierPitch, 500, \targetPitch, 50);
+x.set(\carrierPitch, 3000, \targetPitch, 50);
+x.set(\carrierPitch, 2500, \targetPitch, 51);
 
 x.free;
 
@@ -126,7 +126,7 @@ Pdef(\qdtsRhythm,
     Pbind(
         \instrument, \qdtsEnv,
         \dur, Pseq([0.25, 0.25, 0.5, 0.25, 0.25, 0.25, 0.25], inf),
-        \carrierPitch, Pseq([800, 1000, 1200, 1600], inf),
+        \carrierPitch, Pseq([2800, 3000, 3200, 2600], inf),
         \targetPitch, Pwhite(60, 150),
         \amp, 0.15,
         \atk, 0.01,
@@ -144,69 +144,14 @@ Pdef(\qdtsRhythm,
 
 Pdef(\qdtsRhythm).stop;
 
-// Melodic pattern with scale
-(
-Pdef(\qdtsMelody,
-    Pbind(
-        \instrument, \qdtsEnv,
-        \scale, Scale.minor,
-        \degree, Pseq([0, 2, 4, 5, 7, 5, 4, 2], inf),
-        \octave, Pseq([4, 4, 4, 4, 5, 5, 4, 4], inf),
-        \dur, 0.25,
-        // Map pitch to carrier/target
-        \carrierPitch, Pfunc {|ev|
-            var midi = (ev[\degree] + 60 + ((ev[\octave] - 4) * 12));
-            midi.midicps * 4
-        },
-        \targetPitch, Pfunc {|ev|
-            var midi = (ev[\degree] + 60 + ((ev[\octave] - 4) * 12));
-            midi.midicps / 2
-        },
-        \amp, 0.12,
-        \atk, 0.02,
-        \dec, 0.15,
-        \sus, 0.5,
-        \rel, 0.4,
-        \t0, 1,
-        \t1, Pseg([0.2, 0.7, 0.2], [4, 4], \sin, inf),
-        \t2, 0.33,
-        \t3, 0.2,
-    )
-).play;
-)
 
-Pdef(\qdtsMelody).stop;
-
-// Ambient pad
-(
-Pdef(\qdtsPad,
-    Pbind(
-        \instrument, \qdtsEnv,
-        \dur, Pwhite(2.0, 4.0),
-        \legato, 1.5,
-        \carrierPitch, Pwhite(400, 800),
-        \targetPitch, Pwhite(40, 80),
-        \amp, 0.08,
-        \atk, Pwhite(0.5, 2.0),
-        \dec, 0.3,
-        \sus, 0.7,
-        \rel, Pwhite(1.0, 3.0),
-        \t0, 1,
-        \t1, Pwhite(0.3, 0.6),
-        \t2, Pwhite(0.1, 0.4),
-        \t3, Pwhite(0.05, 0.2),
-    )
-).play;
-)
-
-Pdef(\qdtsPad).stop;
 
 // ============================================================================
 // 5. LFO-MODULATED SPECTRUM
 // ============================================================================
 
 (
-SynthDef(\qdtsLFO, {|out = 0, carrierPitch = 1280, targetPitch = 130, amp = 0.2,
+SynthDef(\qdtsLFO, {|out = 0, carrierPitch = 3280, targetPitch = 130, amp = 0.2,
     lfoRate = 0.3|
 
     // LFOs modulate the target spectrum
@@ -224,8 +169,8 @@ SynthDef(\qdtsLFO, {|out = 0, carrierPitch = 1280, targetPitch = 130, amp = 0.2,
 )
 
 y = Synth(\qdtsLFO, [\lfoRate, 0.2]);
-y.set(\carrierPitch, 1000, \targetPitch, 80);
-y.set(\lfoRate, 0.5);
+y.set(\carrierPitch, 3000, \targetPitch, 180);
+y.set(\lfoRate, 3.5);
 y.free;
 
 // ============================================================================
@@ -249,7 +194,7 @@ SynthDef(\qdts8, {|out = 0, carrierPitch = 1280, targetPitch = 130, amp = 0.15,
 }).add;
 )
 
-z = Synth(\qdts8, [\carrierPitch, 800, \targetPitch, 100]);
+z = Synth(\qdts8, [\carrierPitch, 3800, \targetPitch, 100]);
 z.set(\gate, 0);
 
 // ============================================================================
@@ -311,7 +256,7 @@ SynthDef(\qdtsFormant, {|out = 0, carrierPitch = 1500, targetPitch = 150,
 )
 
 // Create synth
-x = Synth(\qdtsFormant, [\carrierPitch, 1500, \targetPitch, 150]);
+x = Synth(\qdtsFormant, [\carrierPitch, 3500, \targetPitch, 150]);
 
 // Vowel presets - execute each line to hear the difference
 
@@ -339,7 +284,7 @@ x.free;
 // Animated vowel sequence
 // ----------------------------------------
 (
-SynthDef(\qdtsVowelSeq, {|out = 0, carrierPitch = 1500, targetPitch = 150, amp = 0.2,
+SynthDef(\qdtsVowelSeq, {|out = 0, carrierPitch = 3500, targetPitch = 150, amp = 0.2,
     t0 = 1, t1 = 0.5, t2 = 0.33, t3 = 0.25, t4 = 0.2, t5 = 0.16|
 
     var amps = QDTSSolver.kr(6,
@@ -393,7 +338,7 @@ Two QDTS voices slightly detuned create beating (slow) or roughness (fast).
 */
 
 (
-SynthDef(\qdtsBeating, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+SynthDef(\qdtsBeating, {|out = 0, carrierPitch = 3500, targetPitch = 100,
     amp = 0.2, detune = 2|
 
     // Two QDTS voices with slight detune
@@ -435,7 +380,7 @@ x.free;
 // Stereo beating (detuned left/right)
 // ----------------------------------------
 (
-SynthDef(\qdtsStereoBeating, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+SynthDef(\qdtsStereoBeating, {|out = 0, carrierPitch = 3500, targetPitch = 100,
     amp = 0.2, detune = 3|
 
     var targets = [1, 0.5, 0.33, 0.25];
@@ -468,7 +413,7 @@ y.free;
 // Beating with different spectra per voice
 // ----------------------------------------
 (
-SynthDef(\qdtsSpectralBeating, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+SynthDef(\qdtsSpectralBeating, {|out = 0, carrierPitch = 3500, targetPitch = 100,
     amp = 0.2, detune = 2|
 
     // Voice 1: Sawtooth-like
@@ -505,7 +450,7 @@ Different attack/decay times per harmonic creates evolving timbres.
 */
 
 (
-SynthDef(\qdtsSpectralEnv, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+SynthDef(\qdtsSpectralEnv, {|out = 0, carrierPitch = 3500, targetPitch = 100,
     amp = 0.3, gate = 1|
 
     // Different envelope times per harmonic
@@ -529,15 +474,15 @@ SynthDef(\qdtsSpectralEnv, {|out = 0, carrierPitch = 1500, targetPitch = 100,
 )
 
 // Trigger notes - upper harmonics bloom in after attack
-Synth(\qdtsSpectralEnv, [\carrierPitch, 1200, \targetPitch, 100]);
-Synth(\qdtsSpectralEnv, [\carrierPitch, 1500, \targetPitch, 120]);
-Synth(\qdtsSpectralEnv, [\carrierPitch, 1800, \targetPitch, 80]);
+Synth(\qdtsSpectralEnv, [\carrierPitch, 3200, \targetPitch, 100]);
+Synth(\qdtsSpectralEnv, [\carrierPitch, 3500, \targetPitch, 120]);
+Synth(\qdtsSpectralEnv, [\carrierPitch, 3800, \targetPitch, 80]);
 
 // ----------------------------------------
 // Reverse spectral envelope (upper harmonics attack first)
 // ----------------------------------------
 (
-SynthDef(\qdtsReverseEnv, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+SynthDef(\qdtsReverseEnv, {|out = 0, carrierPitch = 3500, targetPitch = 100,
     amp = 0.3, gate = 1|
 
     // Upper harmonics attack first, fundamental last
@@ -559,13 +504,13 @@ SynthDef(\qdtsReverseEnv, {|out = 0, carrierPitch = 1500, targetPitch = 100,
 )
 
 // "Reverse bloom" - brightness arrives before body
-Synth(\qdtsReverseEnv, [\carrierPitch, 1400, \targetPitch, 110]);
+Synth(\qdtsReverseEnv, [\carrierPitch, 3400, \targetPitch, 110]);
 
 // ----------------------------------------
 // Sustained with spectral shimmer
 // ----------------------------------------
 (
-SynthDef(\qdtsShimmer, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+SynthDef(\qdtsShimmer, {|out = 0, carrierPitch = 3500, targetPitch = 100,
     amp = 0.2, gate = 1, atk = 0.3, rel = 1.0|
 
     var mainEnv = EnvGen.kr(Env.asr(atk, 1, rel), gate, doneAction: 2);
@@ -598,7 +543,7 @@ Pdef(\bloomMelody,
         \type, \on,
         \instrument, \qdtsSpectralEnv,
         \dur, 0.5,
-        \carrierPitch, Pseq([1200, 1350, 1500, 1350, 1200, 1100, 1200, 1350], inf),
+        \carrierPitch, Pseq([3200, 3350, 3500, 3350, 3200, 3100, 3200, 3350], inf),
         \targetPitch, Pseq([100, 110, 120, 110, 100, 90, 100, 110], inf),
         \amp, 0.25
     )
@@ -617,10 +562,10 @@ Pdef(\reverseChords,
         \instrument, \qdtsReverseEnv,
         \dur, 1.0,
         \carrierPitch, Pseq([
-            [1200, 1500, 1800],  // Chord 1
-            [1100, 1400, 1700],  // Chord 2
-            [1300, 1600, 1900],  // Chord 3
-            [1000, 1300, 1600]   // Chord 4
+            [3200, 3500, 3800],  // Chord 1
+            [3100, 3400, 3700],  // Chord 2
+            [3300, 3600, 3900],  // Chord 3
+            [3000, 3300, 3600]   // Chord 4
         ], inf).flatten,
         \targetPitch, 100,
         \amp, 0.2,
@@ -640,7 +585,7 @@ Pdef(\randomBlooms,
         \type, \on,
         \instrument, \qdtsSpectralEnv,
         \dur, Pwhite(0.3, 0.8),
-        \carrierPitch, Pwhite(1000, 2000),
+        \carrierPitch, Pwhite(3000, 4000),
         \targetPitch, Pwhite(80, 150),
         \amp, 0.2
     )
@@ -662,7 +607,7 @@ Based on: Bregman, A.S. (1990). Auditory Scene Analysis. MIT Press.
 */
 
 (
-SynthDef(\qdtsGallop, {|out = 0, carrierPitch = 1000, targetPitch = 100,
+SynthDef(\qdtsGallop, {|out = 0, carrierPitch = 3000, targetPitch = 100,
     amp = 0.15, atk = 0.005, rel = 0.1|
 
     var env = EnvGen.kr(Env.perc(atk, rel), doneAction: 2);
@@ -678,8 +623,8 @@ SynthDef(\qdtsGallop, {|out = 0, carrierPitch = 1000, targetPitch = 100,
 // Slow gallop - hear as integrated ABA rhythm
 // ----------------------------------------
 (
-~gallopA = 1000;  // Low pitch
-~gallopB = 1600;  // High pitch
+~gallopA = 3000;  // Low pitch
+~gallopB = 4600;  // High pitch
 
 ~gallopSlow = fork {
     loop {
@@ -798,7 +743,7 @@ Synth(\qdtsExpGlide, [\carrierStart, 1000, \carrierEnd, 2000, \sustain, 2]);
 // Vibrato (pitch oscillation)
 // ----------------------------------------
 (
-SynthDef(\qdtsVibrato, {|out = 0, carrierPitch = 1500, targetPitch = 100,
+SynthDef(\qdtsVibrato, {|out = 0, carrierPitch = 2500, targetPitch = 100,
     amp = 0.2, vibRate = 5, vibDepth = 30|
 
     var vibrato = SinOsc.kr(vibRate) * vibDepth;
@@ -834,7 +779,7 @@ Pdef(\glideMelody,
         \sustain, 0.75,
         \atk, 0.02,
         \rel, 0.08,
-        \carrierStart, Pseq([1000, 1200, 1400, 1200], inf),
+        \carrierStart, Pseq([3000, 3200, 3400, 3200], inf),
         \carrierEnd, Pseq([1200, 1400, 1600, 1000], inf),
         \targetPitch, 100,
         \amp, 0.2
