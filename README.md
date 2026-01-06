@@ -169,10 +169,6 @@ See `examples/QDTS_examples.scd` for comprehensive usage examples including:
 - Real-time spectrum morphing
 - Envelope control
 
-## License
-
-[Add your license here]
-
 ## References
 
 - Gutiérrez, E., Haworth, C., and Cádiz, R. (2024). Generating Sonic Phantoms with Quadratic Difference Tone Spectrum Synthesis. *Computer Music Journal* 47(3):1-16.
