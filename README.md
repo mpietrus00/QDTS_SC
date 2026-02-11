@@ -164,10 +164,19 @@ SynthDef(\qdts, {|carrierPitch = 1280, targetPitch = 130|
 ## Examples
 
 See `examples/QDTS_examples.scd` for comprehensive usage examples including:
-- Basic synthesis
-- Pattern integration
-- Real-time spectrum morphing
-- Envelope control
+- Basic synthesis and SynthDefs
+- Pattern integration (Pbind, Pdef)
+- Real-time parameter control
+- LFO-modulated spectrum
+- Formant shaping (vowel-like sounds)
+- Beating and roughness effects
+- Spectral envelope (per-harmonic dynamics)
+- Galloping rhythm patterns
+- Pitch glide and vibrato
+
+## License
+
+GPL-3.0 - See LICENSE file for details.
 
 ## References
 
