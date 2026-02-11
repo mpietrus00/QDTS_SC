@@ -134,11 +134,9 @@ fork {
 
     OSCFunc({ |msg|
         var achieved = msg[3..];
+        var errors = (achieved - targets).abs;
         "Achieved spectrum: %".format(achieved.round(0.0001)).postln;
         "Target spectrum:   %".format(targets).postln;
-
-        // Compute errors
-        var errors = (achieved - targets).abs;
         "Absolute errors:   %".format(errors.round(0.0001)).postln;
         "Max error: %".format(errors.maxItem.round(0.000001)).postln;
     }, '/verify_achieved').oneShot;
