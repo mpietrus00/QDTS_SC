@@ -308,14 +308,14 @@ fork {
     var t4 = LFNoise1.kr(1.5).range(0.1, 0.4);
     var solver = QDTSSolver.kr(numH, t1, t2, t3, t4);
     var error = solver[numH + 1];
-    var hasNaN = error.isNaN;
+    var badValue = CheckBadValues.kr(error, post: 0);  // 0=ok, 1=NaN, 2=inf
     var isExtreme = error > 10;
 
     // Monitor error
     Poll.kr(Impulse.kr(4), error, "Error");
 
-    // Alert if problems
-    SendReply.kr(hasNaN + isExtreme, '/stability_alert', [error]);
+    // Alert if problems (badValue > 0 means NaN or inf)
+    SendReply.kr((badValue > 0) + isExtreme, '/stability_alert', [error]);
 
     Silent.ar;
 }.play;
