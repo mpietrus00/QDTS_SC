@@ -19,72 +19,33 @@ Based on:
 - **Normalized output**: Amplitudes are normalized for safe mixing
 - **Error output**: Monitor solver convergence quality
 
-## Requirements
-
-- SuperCollider 3.9+
-- CMake 3.12+
-- Eigen3 library
-- SuperCollider source code (for plugin headers)
-
 ## Installation
 
-### macOS / Linux
+1. Download the latest release for your platform from the [Releases](https://github.com/mpietrus00/QDTS_SC/releases) page
 
-```bash
-# Clone the repository
-git clone https://github.com/mpietrus00/QDTS_SC.git
-cd QDTS_SC
+2. Copy the `QDTS_SC` folder to your SuperCollider Extensions directory:
+   - **macOS**: `~/Library/Application Support/SuperCollider/Extensions/`
+   - **Linux**: `~/.local/share/SuperCollider/Extensions/`
+   - **Windows**: `%USERPROFILE%\AppData\Local\SuperCollider\Extensions\`
 
-# Install Eigen (macOS)
-brew install eigen
+3. Recompile the class library: `Language → Recompile Class Library` (or Cmd/Ctrl+Shift+L)
 
-# Install Eigen (Ubuntu/Debian)
-# sudo apt-get install libeigen3-dev
-
-# Clone SuperCollider source (for headers)
-git clone --depth 1 https://github.com/supercollider/supercollider.git ~/supercollider
-
-# Build
-mkdir build && cd build
-cmake .. -DSC_PATH=~/supercollider
-make
-
-# Install (copy to Extensions)
-mkdir -p ~/Library/Application\ Support/SuperCollider/Extensions/QDTS_SC  # macOS
-# mkdir -p ~/.local/share/SuperCollider/Extensions/QDTS_SC  # Linux
-
-cp plugins/QDTSSolver.scx ~/Library/Application\ Support/SuperCollider/Extensions/QDTS_SC/
-cp ../sc-classes/*.sc ~/Library/Application\ Support/SuperCollider/Extensions/QDTS_SC/
-cp ../HelpSource/Classes/QDTSSolver.schelp ~/Library/Application\ Support/SuperCollider/Extensions/QDTS_SC/
-```
-
-### Architecture Notes (macOS)
-
-If you get an architecture mismatch error, rebuild for your SC version:
-
-```bash
-# For Intel/Rosetta
-cmake .. -DSC_PATH=~/supercollider -DCMAKE_OSX_ARCHITECTURES=x86_64
-
-# For Apple Silicon native
-cmake .. -DSC_PATH=~/supercollider -DCMAKE_OSX_ARCHITECTURES=arm64
-
-# Universal binary
-cmake .. -DSC_PATH=~/supercollider -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
-```
+4. Reboot the server
 
 ## Quick Start
 
 ```supercollider
-// Boot server and recompile class library after installation
-Server.local.boot;
+// Boot server
+s.boot;
 
 // Basic test
 (
 {
     var targets = [1, 0.5, 0.33, 0.25];
     var amps = QDTSSolver.kr(4, *targets);
-    var freqs = [800, 900, 1000, 1100, 1200];
+    var carrierPitch = 1000;
+    var targetPitch = 100;
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
     var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
     sines.sum * 0.2 ! 2
 }.play;
@@ -127,39 +88,25 @@ QDTSSolver.kr(numHarmonics, *targets)
 
 ### Target Values
 
-**Avoid setting targets to exactly 0** - this can cause solver instability and loud output. Always use a small minimum value:
+**Avoid setting targets to exactly 0** - this can cause solver instability. Always use a small minimum value:
 
 ```supercollider
 var t0s = t0.max(0.01);
 var t1s = t1.max(0.01);
-// etc.
 ```
 
 ### Carrier and Target Pitch
 
-The synthesis uses frequency relationships:
-- **Carrier pitch**: Base frequency (f_c), should be in **1kHz-5kHz range** (typically ~2.5kHz)
-- **Target pitch**: Difference frequency (f_d)
-- **Resulting frequencies**: f_c, f_c + f_d, f_c + 2*f_d, ...
+- **Carrier pitch**: Base frequency, should be in **1-5 kHz range** (typically ~2.5kHz)
+- **Target pitch**: Difference frequency (the perceived pitch)
+- **Resulting frequencies**: carrier, carrier+target, carrier+2*target, ...
 
 ### Perceptual Notes
 
 - **Max 16 harmonics**: More than 16 QDT harmonics unlikely to be effective
 - **Continuous sounds**: Work better than transients for perceiving QDTs
-- **Amplitude modulation**: Apply square root of intended depth (due to quadratic nature)
 - **Loudspeakers preferred**: QDTs easier to hear over speakers than headphones
 - **Fatigue**: Keep durations under 2 minutes at high levels
-
-```supercollider
-(
-SynthDef(\qdts, {|carrierPitch = 1280, targetPitch = 130|
-    var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
-    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
-    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
-    Out.ar(0, sines.sum * 0.2 ! 2);
-}).add;
-)
-```
 
 ## Examples
 
