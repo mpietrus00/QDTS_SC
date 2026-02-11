@@ -19,16 +19,17 @@ Based on:
 - **Normalized output**: Amplitudes are normalized for safe mixing
 - **Error output**: Monitor solver convergence quality
 
-## Installation
+## Installation (macOS)
 
-1. Download the latest release for your platform from the [Releases](https://github.com/mpietrus00/QDTS_SC/releases) page
+1. Download or clone this repository
 
-2. Copy the `QDTS_SC` folder to your SuperCollider Extensions directory:
-   - **macOS**: `~/Library/Application Support/SuperCollider/Extensions/`
-   - **Linux**: `~/.local/share/SuperCollider/Extensions/`
-   - **Windows**: `%USERPROFILE%\AppData\Local\SuperCollider\Extensions\`
+2. Copy the following to your SuperCollider Extensions folder (`~/Library/Application Support/SuperCollider/Extensions/QDTS_SC/`):
+   - `sc-classes/QDTSSolver.scx` (the compiled plugin)
+   - `sc-classes/QDTSSolver.sc` (the class file)
+   - `HelpSource/` folder (documentation)
+   - `examples/` folder (optional)
 
-3. Recompile the class library: `Language → Recompile Class Library` (or Cmd/Ctrl+Shift+L)
+3. Recompile the class library: `Language → Recompile Class Library` (Cmd+Shift+L)
 
 4. Reboot the server
 
