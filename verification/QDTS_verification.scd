@@ -361,8 +361,7 @@ SynthDef(\qdts_test, { |out=0, amp=0.3, gate=1, carrierFreq=3000, targetFreq=100
     Out.ar(out, (sig * env * amp) ! 2);
 }).add;
 
-s.sync;
-"SynthDef loaded.".postln;
+"SynthDef loaded. Run the timbre examples below.".postln;
 )
 
 // Play different timbres
