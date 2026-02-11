@@ -9,11 +9,11 @@ cmake-build-*/
 *.swo
 *~
 
-# Compiled plugins
+# Compiled plugins (except in sc-classes for distribution)
 *.so
-*.scx
 *.dylib
 *.dll
+!sc-classes/*.scx
 
 # OS files
 .DS_Store
