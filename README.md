@@ -122,6 +122,28 @@ See `examples/QDTS_examples.scd` for comprehensive usage examples including:
 - Galloping rhythm patterns
 - Pitch glide and vibrato
 
+## Verification
+
+The implementation has been verified against a Python reference solver. See `verification/` for test code.
+
+### Convergence Tests
+
+| Spectrum | Harmonics | Error | Status |
+|----------|-----------|-------|--------|
+| Sawtooth | 4 | ~10⁻⁹ | ✓ Pass |
+| Sawtooth | 8 | ~10⁻⁶ | ✓ Pass |
+| Square | 4 | ~10⁻⁴ | ✓ Pass |
+| Triangle | 4 | ~10⁻⁸ | ✓ Pass |
+| Formant | 6 | ~10⁻⁵ | ✓ Pass |
+| Flat | 4 | ~0.3 | ✗ Fail (expected) |
+| Inverted | 4 | ~2.0 | ✗ Fail (expected) |
+
+### Known Limitations
+
+- **Flat spectra** (all harmonics equal) are mathematically difficult
+- **Inverted spectra** (upper harmonics stronger than lower) fail to converge
+- Best results with natural harmonic decay (sawtooth, triangle, formants)
+
 ## License
 
 GPL-3.0 - See LICENSE file for details.
