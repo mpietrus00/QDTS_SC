@@ -29,10 +29,10 @@ s.boot;
 
 // Basic synthesis with carrier and target pitch
 (
-{
+Ndef(\qdts, {
     var numPartials = 4;
-    var carrierPitch = 1000;
-    var targetPitch = 100;
+    var carrierPitch = 2030;
+    var targetPitch = 20;
     var targets = [1, 0.5, 0.33, 0.25];
 
     var amps = QDTSSolver.kr(numPartials, *targets);
@@ -40,7 +40,26 @@ s.boot;
     var sines = (numPartials + 1).collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
 
     sines.sum * 0.2 ! 2
-}.play;
+});
+Ndef(\qdts).gui;
+Ndef(\qdts).playN([15, 16, 21]);
+)
+
+(
+Ndef(\qdts1, {
+    var numPartials = 4;
+    var carrierPitch = 1570;
+    var targetPitch = 123;
+    var targets = [1, 0.5, 0.33, 0.25];
+
+    var amps = QDTSSolver.kr(numPartials, *targets);
+    var freqs = (numPartials + 1).collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = (numPartials + 1).collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    sines.sum * 0.2 ! 2
+});
+//Ndef(\qdts1).gui;
+Ndef(\qdts1).playN([1, 6, 31]);
 )
 
 // ============================================================================
@@ -125,11 +144,11 @@ x.free;
 Pdef(\qdtsRhythm,
     Pbind(
         \instrument, \qdtsEnv,
-        \dur, Pseq([0.25, 0.25, 0.5, 0.25, 0.25, 0.25, 0.25], inf),
+        \dur, Pseq([0.25, 0.25, 0.5, 0.25, 0.25, 0.25, 0.25], inf) * 5,
         \carrierPitch, Pseq([2800, 3000, 3200, 2600], inf),
         \targetPitch, Pwhite(60, 150),
-        \amp, 0.15,
-        \atk, 0.01,
+        \amp, 0.05,
+        \atk, 0.1,
         \dec, 0.1,
         \sus, 0.6,
         \rel, 0.3,

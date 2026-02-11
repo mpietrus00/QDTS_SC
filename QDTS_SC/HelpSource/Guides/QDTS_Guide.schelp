@@ -1,0 +1,261 @@
+TITLE:: QDTS Guide
+summary:: Guide to Quadratic Distortion Tone Spectra synthesis
+categories:: Guides, UGens>Generators
+related:: Classes/QDTSSolver, Classes/QDTS
+
+SECTION:: Introduction
+
+QDTS_SC implements a synthesis technique based on Auditory Distortion Products (ADPs), as described in:
+
+Kendall, G.S., Haworth, C., and Cadiz, R.F. (2014). emphasis::"Sound Synthesis with Auditory Distortion Products.":: Computer Music Journal 38(4).
+
+The technique exploits the nonlinear response of the human auditory system to produce perceived harmonics through the interaction of carefully tuned sinusoidal components.
+
+SECTION:: Theory
+
+SUBSECTION:: Carrier and Target Pitch
+
+The synthesis model uses two pitch parameters:
+
+DEFINITIONLIST::
+## Carrier Pitch (f_c)
+|| The base frequency of the synthesized sound
+## Target Pitch (f_d)
+|| The difference frequency between successive partials
+::
+
+The resulting frequencies are:
+code::
+f_c, f_c + f_d, f_c + 2*f_d, f_c + 3*f_d, ...
+::
+
+SUBSECTION:: Newton's Method
+
+The link::Classes/QDTSSolver:: UGen solves a system of nonlinear equations to find amplitude coefficients (A_1, A_2, ... A_n) such that when the corresponding sinusoids are played together, the resulting quadratic distortion products approximate a target harmonic spectrum.
+
+The solver uses Newton's method with:
+LIST::
+## Multiple random restarts for robustness
+## Perturbation strategies when convergence fails
+## Normalized output for consistent amplitude levels
+::
+
+SECTION:: Basic Usage
+
+SUBSECTION:: Simple Synthesis
+
+code::
+s.boot;
+
+(
+{
+    var numPartials = 4;
+    var carrierPitch = 1000;
+    var targetPitch = 100;
+    var targets = [1, 0.5, 0.33, 0.25]; // Sawtooth-like
+
+    var amps = QDTSSolver.kr(numPartials, *targets);
+    var freqs = (numPartials + 1).collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = (numPartials + 1).collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    sines.sum * 0.2 ! 2
+}.play;
+)
+::
+
+SUBSECTION:: Understanding the Output
+
+QDTSSolver returns code::numHarmonics + 2:: values:
+
+code::
+var amps = QDTSSolver.kr(4, 1, 0.5, 0.33, 0.25);
+// amps[0] = A_1 (normalized, always starts at 1/sqrt(n+1))
+// amps[1] = A_2
+// amps[2] = A_3
+// amps[3] = A_4
+// amps[4] = A_5
+// amps[5] = estimation error
+::
+
+The estimation error indicates convergence quality. Values below 0.001 indicate good convergence.
+
+SECTION:: Common Spectra
+
+SUBSECTION:: Sawtooth
+
+All harmonics present, amplitude decreasing as 1/n:
+
+code::
+var targets = [1, 0.5, 0.33, 0.25, 0.2, 0.166, 0.142, 0.125];
+::
+
+SUBSECTION:: Square
+
+Only odd harmonics:
+
+code::
+var targets = [1, 0.01, 0.33, 0.01, 0.2, 0.01, 0.142, 0.01];
+::
+
+NOTE:: Use 0.01 instead of 0 to avoid solver instability.
+
+SUBSECTION:: Triangle
+
+Odd harmonics with 1/n^2 amplitude:
+
+code::
+var targets = [1, 0.01, 0.11, 0.01, 0.04, 0.01, 0.02, 0.01];
+::
+
+SECTION:: Important Considerations
+
+SUBSECTION:: Avoiding Zero Targets
+
+WARNING:: Setting any target to exactly 0 can cause solver instability and produce very loud output!
+
+Always clamp target values:
+
+code::
+var t0s = t0.max(0.01);
+var t1s = t1.max(0.01);
+// etc.
+::
+
+Or use clip for a range:
+
+code::
+var t0s = t0.clip(0.01, 2.0);
+::
+
+SUBSECTION:: Using Limiter
+
+For safety, especially when experimenting, wrap output in a limiter:
+
+code::
+Out.ar(out, Limiter.ar(signal, 0.9) ! 2);
+::
+
+SUBSECTION:: CPU Considerations
+
+LIST::
+## More harmonics = more CPU usage
+## The solver recomputes when targets change
+## For static spectra, the solver only runs once at synth creation
+::
+
+SECTION:: Advanced Examples
+
+SUBSECTION:: Real-time Spectrum Morphing
+
+code::
+(
+SynthDef(\qdtsMorph, {|out = 0, carrierPitch = 1000, targetPitch = 100, amp = 0.2,
+    t0 = 1, t1 = 0.5, t2 = 0.33, t3 = 0.25|
+
+    var amps = QDTSSolver.kr(4, t0.max(0.01), t1.max(0.01), t2.max(0.01), t3.max(0.01));
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * amp, 0.9) ! 2);
+}).add;
+)
+
+x = Synth(\qdtsMorph);
+
+// Gradually morph from sawtooth to square-ish
+(
+fork {
+    100.do {|i|
+        var t1 = 0.5 * (1 - (i/100)); // Fade out even harmonics
+        var t3 = 0.25 * (1 - (i/100));
+        x.set(\t1, t1.max(0.01), \t3, t3.max(0.01));
+        0.05.wait;
+    };
+}
+)
+
+x.free;
+::
+
+SUBSECTION:: Pattern Integration
+
+code::
+(
+SynthDef(\qdtsNote, {|out = 0, freq = 440, amp = 0.2, gate = 1,
+    atk = 0.01, dec = 0.1, sus = 0.7, rel = 0.3,
+    t0 = 1, t1 = 0.5, t2 = 0.33, t3 = 0.25|
+
+    var carrierPitch = freq * 4;
+    var targetPitch = freq;
+
+    var env = EnvGen.kr(Env.adsr(atk, dec, sus, rel), gate, doneAction: 2);
+    var amps = QDTSSolver.kr(4, t0.max(0.01), t1.max(0.01), t2.max(0.01), t3.max(0.01));
+    var freqs = 5.collect {|i| carrierPitch + (i * targetPitch) };
+    var sines = 5.collect {|i| SinOsc.ar(freqs[i]) * amps[i] };
+
+    Out.ar(out, Limiter.ar(sines.sum * env * amp, 0.9) ! 2);
+}).add;
+)
+
+(
+Pbind(
+    \instrument, \qdtsNote,
+    \degree, Pseq([0, 2, 4, 5, 7], inf),
+    \dur, 0.25,
+    \amp, 0.15,
+    \t1, Pwhite(0.1, 0.8),
+    \t2, Pwhite(0.1, 0.5),
+).play;
+)
+::
+
+SECTION:: Perceptual and Musical Considerations
+
+SUBSECTION:: Carrier Frequency Range
+
+The carrier complex should sit in the ear's most sensitive frequency range of strong::1kHz-5kHz::. A carrier around 2.5kHz typically works well, though per-listener differences apply.
+
+SUBSECTION:: Number of Harmonics
+
+Synthesizing more than 16 QDT harmonics is unlikely to be effective because:
+LIST::
+## QDTs above ~1kHz have only a weak effect
+## More components make the carrier complex more audible as a competing stream
+::
+
+SUBSECTION:: Amplitude Modulation
+
+Due to the quadratic nature of ADPs, amplitude modulation requires the strong::square root:: of the intended modulation depth:
+
+code::
+// To get modulation depth of 0.5 on the QDTS,
+// apply sqrt(0.5) ≈ 0.707 to the carrier
+var mod = SinOsc.kr(1).range(0, 1).sqrt;
+::
+
+SUBSECTION:: Continuous vs Transient Sounds
+
+Continuous sounds work better than transient ones. Since auditory streaming is an active, attentional process, continuous sounds enable the listener to "tune in" to the QDTS stream.
+
+SUBSECTION:: Listening Fatigue
+
+Durations of less than 2 minutes are advised to avoid temporary threshold shift (TTS). Exposure time depends on signal level and frequency range.
+
+SUBSECTION:: Spatial Considerations
+
+When listening over loudspeakers:
+LIST::
+## QDT spectra localize close to the head (like headphone reproduction)
+## Nodes and antinodes in the room affect where QDTS is most audible
+## Head movements can greatly affect audibility and lateralization
+## For low QDT frequencies, peaks appear at fixed physical locations
+::
+
+NOTE:: Paradoxically, QDTs are easier to hear over loudspeakers than headphones, since over headphones both carrier and QDTS are close to the ear.
+
+SECTION:: References
+
+LIST::
+## Gutiérrez, E., Haworth, C., and Cádiz, R. (2024). "Generating Sonic Phantoms with Quadratic Difference Tone Spectrum Synthesis." Computer Music Journal 47(3):1-16.
+## Kendall, G.S., Haworth, C., and Cádiz, R.F. (2014). "Sound Synthesis with Auditory Distortion Products." Computer Music Journal 38(4).
+::
