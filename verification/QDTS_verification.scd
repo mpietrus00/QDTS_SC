@@ -302,21 +302,17 @@ fork {
 
 {
     var numH = 4;
-    // Rapidly changing targets
     var t1 = LFNoise1.kr(2).range(0.5, 1.0);
     var t2 = LFNoise1.kr(3).range(0.1, 0.8);
     var t3 = LFNoise1.kr(2.5).range(0.1, 0.5);
     var t4 = LFNoise1.kr(1.5).range(0.1, 0.4);
-
     var solver = QDTSSolver.kr(numH, t1, t2, t3, t4);
     var error = solver[numH + 1];
+    var hasNaN = error.isNaN;
+    var isExtreme = error > 10;
 
     // Monitor error
     Poll.kr(Impulse.kr(4), error, "Error");
-
-    // Check for NaN or extreme values
-    var hasNaN = error.isNaN;
-    var isExtreme = error > 10;
 
     // Alert if problems
     SendReply.kr(hasNaN + isExtreme, '/stability_alert', [error]);
